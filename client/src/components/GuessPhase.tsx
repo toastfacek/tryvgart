@@ -3,6 +3,21 @@ import { socket } from '../utils/socket'
 import RevealInterface from './RevealInterface'
 import { Player, Answer, GuessAnswer, Score } from '../types/game'
 
+// Add these interfaces for the socket events
+interface GuessPhaseData {
+  prompts: string[]
+  answers: {
+    promptIndex: number
+    answers: GuessAnswer[]
+  }[]
+}
+
+interface RevealData {
+  answers: Answer[]
+  guesses: [string, Record<number, string>][] // [playerId, guesses]
+  scores: Score[]
+}
+
 interface GuessPhaseProps {
   roomCode: string
   players: Player[]
@@ -27,7 +42,7 @@ const GuessPhase: React.FC<GuessPhaseProps> = ({ roomCode, players, isHost }) =>
   useEffect(() => {
     console.log('Setting up guess phase listeners')
     
-    socket.on('guess_phase_started', (data) => {
+    socket.on('guess_phase_started', (data: GuessPhaseData) => {
       console.log('Received guess phase data:', data)
       if (!data.prompts || !data.answers) {
         console.error('Invalid data received:', data)
@@ -37,19 +52,19 @@ const GuessPhase: React.FC<GuessPhaseProps> = ({ roomCode, players, isHost }) =>
       setPrompts(data.prompts)
       const currentAnswers = data.answers.find(a => a.promptIndex === currentPromptIndex)
       if (currentAnswers) {
-        setAnswers(currentAnswers.answers as GuessAnswer[])
+        setAnswers(currentAnswers.answers)
       }
     })
 
-    socket.on('reveal_answers', (data) => {
+    socket.on('reveal_answers', (data: RevealData) => {
       console.log('Received reveal data:', data)
       setRevealed(true)
       setRevealData({
-        answers: data.answers as Answer[],
-        guesses: data.guesses.reduce((acc, [playerId, guesses]) => {
+        answers: data.answers,
+        guesses: data.guesses.reduce<Record<string, Record<number, string>>>((acc, [playerId, guesses]) => {
           acc[playerId] = guesses
           return acc
-        }, {} as Record<string, Record<number, string>>),
+        }, {}),
         scores: data.scores
       })
     })
@@ -60,8 +75,8 @@ const GuessPhase: React.FC<GuessPhaseProps> = ({ roomCode, players, isHost }) =>
       socket.emit('start_guess_phase', { roomCode })
     }
 
-    socket.on('guess_submitted', ({ playerId }) => {
-      setSubmittedPlayers(prev => [...prev, playerId])
+    socket.on('guess_submitted', (data: { playerId: string }) => {
+      setSubmittedPlayers(prev => [...prev, data.playerId])
     })
 
     socket.on('next_prompt_guessing', () => {
@@ -89,10 +104,10 @@ const GuessPhase: React.FC<GuessPhaseProps> = ({ roomCode, players, isHost }) =>
 
   // Add new effect to handle prompt changes
   useEffect(() => {
-    socket.on('next_prompt_started', (data) => {
+    socket.on('next_prompt_started', (data: GuessPhaseData) => {
       const currentAnswers = data.answers.find(a => a.promptIndex === currentPromptIndex)
       if (currentAnswers) {
-        setAnswers(currentAnswers.answers as GuessAnswer[])
+        setAnswers(currentAnswers.answers)
         setGuesses({})
         setSubmitted(false)
         setSubmittedPlayers([])

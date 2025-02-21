@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 :root {
   --primary-color: #ff71ce;
   --secondary-color: #01cdfe;
@@ -6,6 +8,19 @@
   --light-color: #ffffff;
   --bg-color: #2d1b69;
   --gradient: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+
+  font-family: 'Press Start 2P', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: var(--light-color);
+  background-color: var(--bg-color);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
@@ -86,6 +101,37 @@ body {
   box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
 }
 
+.game-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 3em;
+  color: var(--primary-color);
+  text-shadow: 
+    2px 2px var(--secondary-color),
+    4px 4px var(--dark-color);
+  margin-bottom: 2rem;
+  letter-spacing: 2px;
+  animation: titleGlow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+  from {
+    text-shadow: 
+      0 0 5px var(--secondary-color),
+      0 0 10px var(--secondary-color),
+      0 0 15px var(--primary-color),
+      2px 2px var(--secondary-color),
+      4px 4px var(--dark-color);
+  }
+  to {
+    text-shadow: 
+      0 0 10px var(--secondary-color),
+      0 0 20px var(--secondary-color),
+      0 0 30px var(--primary-color),
+      2px 2px var(--secondary-color),
+      4px 4px var(--dark-color);
+  }
+}
+
 .form-group {
   width: 100%;
   max-width: 500px;
@@ -126,6 +172,47 @@ input:focus, textarea:focus, select:focus {
   border-left-color: var(--primary-color);
 }
 
+/* Add a subtle neon effect to all borders */
+.container, .button, .input, .prompt-display, .answer-card {
+  box-shadow: 0 0 10px rgba(255, 113, 206, 0.2),
+              0 0 20px rgba(1, 205, 254, 0.1);
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.emoji-button {
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.5em;
+  padding: 0.5rem;
+  transition: all 0.2s;
+}
+
+.emoji-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+  border-color: var(--primary-color);
+}
+
+.emoji-button.selected {
+  border-color: var(--primary-color);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.selected-emoji {
+  font-size: 2em;
+  margin: 0.5rem 0;
+}
+
 .player-item {
   display: flex;
   align-items: center;
@@ -144,8 +231,16 @@ input:focus, textarea:focus, select:focus {
 
 .player-item.submitted {
   background: rgba(1, 205, 254, 0.15);
-  border-left: 4px solid var(--secondary-color);
-  border: 1px solid var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.player-emoji {
+  font-size: 1.5em;
+}
+
+.player-name {
+  font-weight: 500;
+  color: var(--accent-color);
 }
 
 .winner-announcement {
@@ -155,13 +250,19 @@ input:focus, textarea:focus, select:focus {
   animation: glow 1.5s ease-in-out infinite alternate;
 }
 
-@keyframes glow {
-  from {
-    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--primary-color);
-  }
-  to {
-    text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px var(--primary-color);
-  }
+.room-code {
+  font-size: 1.2em;
+  margin-bottom: 2rem;
+}
+
+.code {
+  font-weight: bold;
+  letter-spacing: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  color: var(--accent-color);
+  border: 1px solid var(--primary-color);
 }
 
 .scores-panel {
@@ -188,165 +289,6 @@ input:focus, textarea:focus, select:focus {
   color: var(--accent-color);
 }
 
-.progress-bar {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.8rem 1.2rem;
-  border-radius: 20px;
-  border: 2px solid var(--secondary-color);
-  font-size: 0.9em;
-  letter-spacing: 1px;
-}
-
-.button-group {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-h1, h2, h3, h4 {
-  color: var(--light-color);
-  text-shadow: 2px 2px var(--dark-color);
-}
-
-.emoji-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  width: 100%;
-  max-width: 300px;
-}
-
-.emoji-button {
-  background: none;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1.5em;
-  padding: 0.5rem;
-  transition: all 0.2s;
-}
-
-.emoji-button:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.1);
-}
-
-.emoji-button.selected {
-  border-color: var(--primary-color);
-  background-color: #f0f0f0;
-}
-
-.selected-emoji {
-  font-size: 2em;
-  margin: 0.5rem 0;
-}
-
-.error-message {
-  color: #dc3545;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-  background-color: #f8d7da;
-}
-
-.room-code {
-  font-size: 1.2em;
-  margin-bottom: 2rem;
-}
-
-.code {
-  font-weight: bold;
-  letter-spacing: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  color: var(--accent-color);
-  border: 1px solid var(--primary-color);
-}
-
-.players-list {
-  width: 100%;
-  max-width: 300px;
-  margin: 1rem 0;
-}
-
-.player-emoji {
-  font-size: 1.5em;
-}
-
-.player-name {
-  font-weight: 500;
-}
-
-.waiting-message {
-  color: var(--accent-color);
-  font-style: italic;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1rem;
-  border-radius: 4px;
-  margin: 1rem 0;
-}
-
-.secondary {
-  background-color: #6c757d;
-}
-
-.secondary:hover {
-  background-color: #5a6268;
-}
-
-.copy-button {
-  margin-left: 1rem;
-  padding: 0.3rem 0.8rem;
-  border: 1px solid var(--secondary-color);
-  border-radius: 4px;
-  background-color: transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: var(--secondary-color);
-}
-
-.copy-button:hover {
-  background-color: var(--secondary-color);
-  color: var(--dark-color);
-}
-
-textarea {
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  font-size: 1em;
-  resize: vertical;
-  min-height: 100px;
-}
-
-.char-count {
-  text-align: right;
-  color: #666;
-  font-size: 0.9em;
-  margin-top: 0.25rem;
-}
-
-.submission-status {
-  width: 100%;
-  max-width: 300px;
-  margin-top: 2rem;
-}
-
-.status-icon {
-  margin-left: auto;
-  color: #28a745;
-  font-weight: bold;
-}
-
-textarea.prompt-input {
-  min-height: 120px;
-  font-size: 1.1em;
-  line-height: 1.5;
-}
-
 .prompt-display {
   background: rgba(255, 255, 255, 0.05);
   padding: 1.5rem;
@@ -362,178 +304,51 @@ textarea.prompt-input {
   line-height: 1.5;
   margin-top: 1rem;
   color: var(--light-color);
-}
-
-.answer-input {
-  min-height: 100px;
-  font-size: 1.1em;
-  line-height: 1.5;
-}
-
-.answers-list {
-  width: 100%;
-  max-width: 500px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin: 1rem 0;
-}
-
-.answer-text {
-  font-size: 1.1em;
-  line-height: 1.5;
-  color: var(--light-color);
-}
-
-.player-select {
-  padding: 0.5rem;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  font-size: 1em;
-  background-color: white;
-  cursor: pointer;
-}
-
-.player-select option:disabled {
-  color: #999;
-  font-style: italic;
-}
-
-.answer-author {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.author-emoji {
-  font-size: 1.5em;
-}
-
-.author-name {
-  font-weight: 500;
-  color: var(--primary-color);
-}
-
-.reveal-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.answer-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.guesses-list {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e0e0e0;
-}
-
-.guess-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-  margin: 0.25rem 0;
-}
-
-.guess-item.correct {
-  background: rgba(46, 213, 115, 0.2);
-  color: #2ed573;
-}
-
-.guess-item.incorrect {
-  background: rgba(255, 71, 87, 0.2);
-  color: #ff4757;
-}
-
-.guess-result {
-  margin-left: auto;
-  font-weight: bold;
-}
-
-.game-end-container {
-  margin-top: 2rem;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  text-align: center;
-  border: 2px solid var(--primary-color);
-}
-
-.winner-score {
-  font-size: 1.2em;
-  color: var(--accent-color);
-  margin-bottom: 2rem;
-}
-
-/* Add a subtle neon effect to all borders */
-.container, .button, .input, .prompt-display, .answer-card {
-  box-shadow: 0 0 10px rgba(255, 113, 206, 0.2),
-              0 0 20px rgba(1, 205, 254, 0.1);
-}
-
-.debug-info {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-size: 0.8em;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.button.small {
-  padding: 0.3em 0.8em;
-  font-size: 0.8em;
-}
-
-/* Update room-code when inside debug-info */
-.debug-info .room-code {
-  margin: 0;
-  font-size: 0.9em;
-  opacity: 0.8;
-}
-
-/* Add new styles for the game title */
-.game-title {
   font-family: 'Press Start 2P', cursive;
-  font-size: 3em;
-  color: var(--primary-color);
-  text-shadow: 
-    2px 2px var(--secondary-color),
-    4px 4px var(--dark-color);
-  margin-bottom: 2rem;
-  letter-spacing: 2px;
-  animation: titleGlow 1.5s ease-in-out infinite alternate;
 }
 
-@keyframes titleGlow {
-  from {
-    text-shadow: 
-      0 0 5px var(--secondary-color),
-      0 0 10px var(--secondary-color),
-      0 0 15px var(--primary-color),
-      2px 2px var(--secondary-color),
-      4px 4px var(--dark-color);
+h1, h2, h3, h4 {
+  font-family: 'Press Start 2P', cursive;
+  color: var(--light-color);
+  text-shadow: 2px 2px var(--dark-color);
+  line-height: 1.4;
+}
+
+.waiting-message {
+  color: var(--accent-color);
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.9em;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-color: #e6e6fa;
+    --dark-color: #2d1b69;
+    color: var(--dark-color);
   }
-  to {
-    text-shadow: 
-      0 0 10px var(--secondary-color),
-      0 0 20px var(--secondary-color),
-      0 0 30px var(--primary-color),
-      2px 2px var(--secondary-color),
-      4px 4px var(--dark-color);
+
+  body {
+    background-image: 
+      linear-gradient(45deg, rgba(255,113,206,0.1) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(255,113,206,0.1) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255,113,206,0.1) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(255,113,206,0.1) 75%);
   }
-} 
+
+  .container {
+    background: rgba(255, 255, 255, 0.95);
+  }
+}

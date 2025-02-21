@@ -4,8 +4,9 @@ import Home from './components/Home'
 import CreateRoom from './components/CreateRoom'
 import JoinRoom from './components/JoinRoom'
 import Game from './components/Game'
+import './App.css'
 
-const App = () => {
+function App() {
   return (
     <Router>
       <Routes>
@@ -18,4 +19,4 @@ const App = () => {
   )
 }
 
-export default App 
+export default App

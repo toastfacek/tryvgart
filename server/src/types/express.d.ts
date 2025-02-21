@@ -1,4 +1,1 @@
-declare module 'express' {
-    export = e;
-    const e: any;
-} 
+// This file can be deleted since we're using @types/express 

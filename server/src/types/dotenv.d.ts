@@ -1,4 +1,1 @@
-declare module 'dotenv' {
-    export function config(): void
-    export function parse(): void
-} 
+// This file can be deleted since dotenv types are included in @types/node 

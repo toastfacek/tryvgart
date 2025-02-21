@@ -1,14 +1,18 @@
-import express, { Request, Response } from 'express'
-import { createServer } from 'http'
+import express from 'express'
+import type { Application, Request, Response } from 'express'
+import { createServer } from 'node:http'
+import type { Server as HTTPServer } from 'node:http'
 import { Server } from 'socket.io'
+import type { Socket } from 'socket.io'
 import cors from 'cors'
+import type { CorsOptions } from 'cors'
 import dotenv from 'dotenv'
 import { generateRoomCode } from './utils'
 
 dotenv.config()
 
-const app = express()
-const httpServer = createServer(app)
+const app: Application = express()
+const httpServer: HTTPServer = createServer(app)
 const io = new Server(httpServer, {
   cors: {
     origin: [
@@ -16,7 +20,7 @@ const io = new Server(httpServer, {
       'https://tryvgart.vercel.app'
     ],
     methods: ['GET', 'POST']
-  }
+  } as CorsOptions
 })
 
 // Middleware
@@ -24,7 +28,7 @@ app.use(cors())
 app.use(express.json())
 
 // Store game state in memory
-const rooms = new Map()
+const rooms = new Map<string, Room>()
 
 interface Player {
   id: string
@@ -43,11 +47,76 @@ interface Room {
   scores: Map<string, number> // playerId -> score
 }
 
-io.on('connection', (socket) => {
+// Event interfaces
+interface CreateRoomData {
+  playerName: string
+  emoji: string
+}
+
+interface JoinRoomData {
+  roomCode: string
+  playerName: string
+  emoji: string
+}
+
+interface CloseRoomData {
+  roomCode: string
+}
+
+interface StartGameData {
+  roomCode: string
+}
+
+interface SubmitPromptData {
+  roomCode: string
+  prompt: string
+}
+
+interface SubmitAnswerData {
+  roomCode: string
+  promptIndex: number
+  answer: string
+}
+
+interface SubmitGuessesData {
+  roomCode: string
+  promptIndex: number
+  guesses: Record<number, string>
+}
+
+interface NextPromptData {
+  roomCode: string
+  promptIndex: number
+}
+
+// Add interfaces for the remaining event handlers
+interface StartAnswerPhaseData {
+  roomCode: string
+}
+
+interface StartGuessPhaseData {
+  roomCode: string
+}
+
+interface StartRevealPhaseData {
+  roomCode: string
+}
+
+interface ResetGameData {
+  roomCode: string
+}
+
+// Add interfaces for emitted events
+interface RoomCreatedPayload {
+  roomCode: string;
+  room: Room;
+}
+
+io.on('connection', (socket: Socket) => {
   console.log('User connected:', socket.id)
 
   // Handle room creation
-  socket.on('create_room', ({ playerName, emoji }) => {
+  socket.on('create_room', ({ playerName, emoji }: CreateRoomData): void => {
     const roomCode = generateRoomCode()
     const room: Room = {
       code: roomCode,
@@ -62,12 +131,12 @@ io.on('connection', (socket) => {
     
     rooms.set(roomCode, room)
     socket.join(roomCode)
-    socket.emit('room_created', { roomCode, room })
+    socket.emit('room_created', { roomCode, room } as RoomCreatedPayload)
     room.scores.set(socket.id, 0)
   })
 
   // Handle room joining
-  socket.on('join_room', ({ roomCode, playerName, emoji }) => {
+  socket.on('join_room', ({ roomCode, playerName, emoji }: JoinRoomData) => {
     const room = rooms.get(roomCode)
     
     if (!room) {
@@ -103,7 +172,7 @@ io.on('connection', (socket) => {
     })
   })
 
-  socket.on('close_room', ({ roomCode }) => {
+  socket.on('close_room', ({ roomCode }: CloseRoomData) => {
     const room = rooms.get(roomCode)
     if (room && room.host.id === socket.id) {
       // Notify all players in the room
@@ -113,7 +182,7 @@ io.on('connection', (socket) => {
   })
 
   // Add new event handlers
-  socket.on('start_game', ({ roomCode }) => {
+  socket.on('start_game', ({ roomCode }: StartGameData) => {
     const room = rooms.get(roomCode)
     if (room && room.host.id === socket.id) {
       room.gameState = 'prompt'
@@ -121,7 +190,7 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('submit_prompt', ({ roomCode, prompt }) => {
+  socket.on('submit_prompt', ({ roomCode, prompt }: SubmitPromptData) => {
     const room = rooms.get(roomCode)
     if (!room) return
 
@@ -137,13 +206,13 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('start_answer_phase', ({ roomCode }) => {
+  socket.on('start_answer_phase', ({ roomCode }: StartAnswerPhaseData) => {
     const room = rooms.get(roomCode)
     console.log('Starting answer phase for room:', roomCode)
     console.log('Room state:', {
       gameState: room?.gameState,
       promptsSize: room?.prompts.size,
-      prompts: Array.from(room?.prompts?.values() || [])
+      prompts: Array.from<string>(room?.prompts?.values() || [])
     })
     
     if (!room) {
@@ -157,7 +226,7 @@ io.on('connection', (socket) => {
     }
 
     room.gameState = 'answer'
-    const prompts = Array.from(room.prompts.values())
+    const prompts = Array.from<string>(room.prompts.values())
     console.log('Sending prompts to clients:', prompts)
     
     if (prompts.length === 0) {
@@ -169,7 +238,7 @@ io.on('connection', (socket) => {
     io.to(roomCode).emit('answer_phase_started', { prompts })
   })
 
-  socket.on('submit_answer', ({ roomCode, promptIndex, answer }) => {
+  socket.on('submit_answer', ({ roomCode, promptIndex, answer }: SubmitAnswerData) => {
     const room = rooms.get(roomCode)
     if (!room) return
 
@@ -178,7 +247,7 @@ io.on('connection', (socket) => {
     if (!room.answers.has(promptIndex)) {
       room.answers.set(promptIndex, new Map())
     }
-    const promptAnswers = room.answers.get(promptIndex)!
+    const promptAnswers = room.answers.get(promptIndex) as Map<string, string>
     promptAnswers.set(socket.id, answer)
 
     console.log(`Current answers for prompt ${promptIndex}:`, 
@@ -192,7 +261,7 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('submit_guesses', ({ roomCode, promptIndex, guesses }) => {
+  socket.on('submit_guesses', ({ roomCode, promptIndex, guesses }: SubmitGuessesData) => {
     const room = rooms.get(roomCode)
     if (!room) return
 
@@ -248,7 +317,7 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('next_prompt', ({ roomCode, promptIndex }) => {
+  socket.on('next_prompt', ({ roomCode, promptIndex }: NextPromptData) => {
     const room = rooms.get(roomCode)
     if (!room || room.host.id !== socket.id) return
 
@@ -269,7 +338,7 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('start_guess_phase', ({ roomCode }) => {
+  socket.on('start_guess_phase', ({ roomCode }: StartGuessPhaseData) => {
     const room = rooms.get(roomCode)
     console.log('Starting guess phase for room:', roomCode)
     
@@ -277,7 +346,7 @@ io.on('connection', (socket) => {
       room.gameState = 'guess'
       
       // Format the data for the client
-      const promptsArray = Array.from(room.prompts.values())
+      const promptsArray = Array.from<string>(room.prompts.values())
       
       // Restructure answers data
       const answersArray = []
@@ -310,7 +379,7 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('start_reveal_phase', ({ roomCode }) => {
+  socket.on('start_reveal_phase', ({ roomCode }: StartRevealPhaseData) => {
     const room = rooms.get(roomCode)
     console.log('Starting reveal phase for room:', roomCode)
     
@@ -318,7 +387,7 @@ io.on('connection', (socket) => {
       room.gameState = 'reveal'
       
       // Format the data for the client
-      const promptsArray = Array.from(room.prompts.values())
+      const promptsArray = Array.from<string>(room.prompts.values())
       const answersArray = []
       for (let i = 0; i < promptsArray.length; i++) {
         const promptAnswers = room.answers.get(i)
@@ -345,7 +414,7 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('reset_game', ({ roomCode }) => {
+  socket.on('reset_game', ({ roomCode }: ResetGameData) => {
     const room = rooms.get(roomCode)
     if (room && room.host.id === socket.id) {
       // Reset the room state but keep the players

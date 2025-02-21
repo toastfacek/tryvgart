@@ -116,6 +116,11 @@ interface HealthResponse {
   status: string;
 }
 
+// Add this interface near the other interfaces
+interface NextQuestionData {
+  roomCode: string
+}
+
 io.on('connection', (socket: Socket) => {
   console.log('User connected:', socket.id)
 
@@ -434,6 +439,39 @@ io.on('connection', (socket: Socket) => {
       // Notify all players to return to lobby
       io.to(roomCode).emit('game_reset')
     }
+  })
+
+  // Add this in the socket.on('connection') block
+  socket.on('next_question', ({ roomCode }: NextQuestionData) => {
+    const room = rooms.get(roomCode)
+    if (!room || room.host.id !== socket.id) return
+      
+    // Move to guess phase
+    room.gameState = 'guess'
+    
+    // Format the data for the client
+    const promptsArray = Array.from<string>(room.prompts.values())
+    const answersArray = []
+    for (let i = 0; i < promptsArray.length; i++) {
+      const promptAnswers = room.answers.get(i)
+      if (promptAnswers) {
+        answersArray.push({
+          promptIndex: i,
+          answers: Array.from(promptAnswers.entries()).map((entry): { playerId: string; text: string } => {
+            const [playerId, text] = entry as [string, string];
+            return {
+              playerId,
+              text
+            };
+          })
+        })
+      }
+    }
+
+    io.to(roomCode).emit('guess_phase_started', {
+      prompts: promptsArray,
+      answers: answersArray
+    })
   })
 })
 

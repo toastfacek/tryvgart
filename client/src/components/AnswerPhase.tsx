@@ -19,6 +19,7 @@ const AnswerPhase: React.FC<AnswerPhaseProps> = ({ roomCode, players, isHost }) 
   const [answer, setAnswer] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [answeredPlayers, setAnsweredPlayers] = useState<string[]>([])
+  const [allAnswersSubmitted, setAllAnswersSubmitted] = useState(false)
 
   useEffect(() => {
     // Remove any existing listeners first
@@ -48,6 +49,7 @@ const AnswerPhase: React.FC<AnswerPhaseProps> = ({ roomCode, players, isHost }) 
 
     socket.on('all_answers_submitted', () => {
       console.log('All answers submitted for current prompt')
+      setAllAnswersSubmitted(true)
     })
 
     return () => {
@@ -71,6 +73,12 @@ const AnswerPhase: React.FC<AnswerPhaseProps> = ({ roomCode, players, isHost }) 
     })
     setSubmitted(true)
     setAnswer('')
+  }
+
+  const handleNextQuestion = () => {
+    if (isHost) {
+      socket.emit('next_question', { roomCode })
+    }
   }
 
   if (!prompts.length) {
@@ -148,20 +156,9 @@ const AnswerPhase: React.FC<AnswerPhaseProps> = ({ roomCode, players, isHost }) 
         ))}
       </div>
 
-      {isHost && answeredPlayers.length === players.length && (
-        <button 
-          className="button"
-          onClick={() => {
-            if (currentPromptIndex === prompts.length - 1) {
-              socket.emit('start_guess_phase', { roomCode })
-            } else {
-              socket.emit('next_prompt', { roomCode })
-            }
-          }}
-        >
-          {currentPromptIndex === prompts.length - 1 
-            ? "Everyone's Done - Start Guessing Phase" 
-            : "Everyone's Done - Next Question"}
+      {isHost && allAnswersSubmitted && (
+        <button onClick={handleNextQuestion}>
+          EVERYONE'S DONE - NEXT QUESTION
         </button>
       )}
     </div>

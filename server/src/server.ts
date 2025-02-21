@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
@@ -365,7 +365,7 @@ io.on('connection', (socket) => {
 })
 
 // Utils
-app.get('/health', (_, res) => {
+app.get('/health', (_: Request, res: Response) => {
   res.json({ status: 'ok' })
 })
 

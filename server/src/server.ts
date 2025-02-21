@@ -1,12 +1,12 @@
 import express from 'express'
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express-serve-static-core'
+import type { Request, Response } from 'express-serve-static-core'
 import { createServer } from 'http'
 import type { Server as HTTPServer } from 'http'
 import { Server } from 'socket.io'
 import type { Socket } from 'socket.io'
 import cors from 'cors'
 import type { CorsOptions } from 'cors'
-import dotenv from 'dotenv'
+import * as dotenv from 'dotenv'
 import { generateRoomCode } from './utils'
 
 dotenv.config()
@@ -438,7 +438,7 @@ io.on('connection', (socket: Socket) => {
 })
 
 // Utils
-app.get('/health', (_: ExpressRequest, res: ExpressResponse) => {
+app.get('/health', (_: Request, res: Response) => {
   res.json({ status: 'ok' } as HealthResponse)
 })
 

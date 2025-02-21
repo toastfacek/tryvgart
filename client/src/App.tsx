@@ -1,4 +1,4 @@
-import React from 'react'
+import { FC } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Home from './components/Home'
 import CreateRoom from './components/CreateRoom'
@@ -6,7 +6,7 @@ import JoinRoom from './components/JoinRoom'
 import Game from './components/Game'
 import './App.css'
 
-function App() {
+const App: FC = () => {
   return (
     <Router>
       <Routes>

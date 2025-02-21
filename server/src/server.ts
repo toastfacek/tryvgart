@@ -86,7 +86,7 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id)
     // Remove player from any room they were in
     rooms.forEach((room, roomCode) => {
-      const playerIndex = room.players.findIndex(p => p.id === socket.id)
+      const playerIndex = room.players.findIndex((p: Player) => p.id === socket.id)
       if (playerIndex !== -1) {
         room.players.splice(playerIndex, 1)
         io.to(roomCode).emit('player_left', { playerId: socket.id })
@@ -206,9 +206,9 @@ io.on('connection', (socket) => {
     if (promptGuesses.size === room.players.length) {
       // Calculate scores for this round
       const promptAnswers = room.answers.get(promptIndex)!
-      promptGuesses.forEach((playerGuesses, guessingPlayerId) => {
+      promptGuesses.forEach((playerGuesses: Record<number, string>, guessingPlayerId: string) => {
         let correctGuesses = 0
-        Object.entries(playerGuesses).forEach(([answerIndex, guessedPlayerId]) => {
+        Object.entries(playerGuesses).forEach(([answerIndex, guessedPlayerId]: [string, string]) => {
           const actualAuthorId = Array.from(promptAnswers.keys())[Number(answerIndex)]
           if (guessedPlayerId === actualAuthorId) {
             correctGuesses++
@@ -222,19 +222,25 @@ io.on('connection', (socket) => {
       // Send reveal data including scores
       io.to(roomCode).emit('reveal_answers', {
         promptIndex,
-        answers: Array.from(promptAnswers.entries()).map(([playerId, text]) => ({
-          playerId,
-          text,
-          authorName: room.players.find(p => p.id === playerId)?.name,
-          authorEmoji: room.players.find(p => p.id === playerId)?.emoji
-        })),
+        answers: Array.from(promptAnswers.entries()).map((entry): { playerId: string; text: string; authorName: string | undefined; authorEmoji: string | undefined } => {
+          const [playerId, text] = entry as [string, string];
+          return {
+            playerId,
+            text,
+            authorName: room.players.find((p: Player) => p.id === playerId)?.name,
+            authorEmoji: room.players.find((p: Player) => p.id === playerId)?.emoji
+          };
+        }),
         guesses: Array.from(promptGuesses.entries()),
-        scores: Array.from(room.scores.entries()).map(([playerId, score]) => ({
-          playerId,
-          playerName: room.players.find(p => p.id === playerId)?.name,
-          playerEmoji: room.players.find(p => p.id === playerId)?.emoji,
-          score
-        }))
+        scores: Array.from(room.scores.entries()).map((entry): { playerId: string; playerName: string | undefined; playerEmoji: string | undefined; score: number } => {
+          const [playerId, score] = entry as [string, number];
+          return {
+            playerId,
+            playerName: room.players.find((p: Player) => p.id === playerId)?.name,
+            playerEmoji: room.players.find((p: Player) => p.id === playerId)?.emoji,
+            score
+          };
+        })
       })
     }
   })
@@ -246,10 +252,13 @@ io.on('connection', (socket) => {
     // Send next prompt's answers
     const nextAnswers = room.answers.get(promptIndex)
     if (nextAnswers) {
-      const answers = Array.from(nextAnswers.entries()).map(([playerId, text]) => ({
-        playerId,
-        text
-      }))
+      const answers = Array.from(nextAnswers.entries()).map((entry): { playerId: string; text: string } => {
+        const [playerId, text] = entry as [string, string];
+        return {
+          playerId,
+          text
+        };
+      })
       io.to(roomCode).emit('next_prompt_started', { 
         promptIndex,
         answers
@@ -274,10 +283,13 @@ io.on('connection', (socket) => {
         if (promptAnswers) {
           answersArray.push({
             promptIndex: i,
-            answers: Array.from(promptAnswers.entries()).map(([playerId, text]) => ({
-              playerId,
-              text
-            }))
+            answers: Array.from(promptAnswers.entries()).map((entry): { playerId: string; text: string } => {
+              const [playerId, text] = entry as [string, string];
+              return {
+                playerId,
+                text
+              };
+            })
           })
         }
       }
@@ -310,12 +322,15 @@ io.on('connection', (socket) => {
         if (promptAnswers) {
           answersArray.push({
             promptIndex: i,
-            answers: Array.from(promptAnswers.entries()).map(([playerId, text]) => ({
-              playerId,
-              text,
-              authorName: room.players.find(p => p.id === playerId)?.name,
-              authorEmoji: room.players.find(p => p.id === playerId)?.emoji
-            }))
+            answers: Array.from(promptAnswers.entries()).map((entry): { playerId: string; text: string; authorName: string | undefined; authorEmoji: string | undefined } => {
+              const [playerId, text] = entry as [string, string];
+              return {
+                playerId,
+                text,
+                authorName: room.players.find((p: Player) => p.id === playerId)?.name,
+                authorEmoji: room.players.find((p: Player) => p.id === playerId)?.emoji
+              };
+            })
           })
         }
       }
@@ -336,7 +351,7 @@ io.on('connection', (socket) => {
       room.answers = new Map()
       room.guesses = new Map()
       room.scores = new Map()
-      room.players.forEach(player => {
+      room.players.forEach((player: Player) => {
         room.scores.set(player.id, 0)
       })
       

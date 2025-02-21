@@ -1,6 +1,7 @@
 import React from 'react'
-import { Player, Answer, Score } from '../types/game'
 import { useNavigate } from 'react-router-dom'
+import { socket } from '../utils/socket'
+import { Player, Answer, Score } from '../types/game'
 
 interface RevealInterfaceProps {
   answers: Answer[]
@@ -37,6 +38,15 @@ const RevealInterface: React.FC<RevealInterfaceProps> = ({
     if (isHost) {
       socket.emit('close_room', { roomCode })
     }
+    navigate('/')
+  }
+
+  const handleNextPrompt = () => {
+    socket.emit('next_prompt', { roomCode })
+  }
+
+  const handleEndGame = () => {
+    socket.emit('end_game', { roomCode })
     navigate('/')
   }
 

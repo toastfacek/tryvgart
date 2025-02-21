@@ -1,7 +1,7 @@
 import express from 'express'
-import type { Application, Request, Response } from 'express'
-import { createServer } from 'node:http'
-import type { Server as HTTPServer } from 'node:http'
+import type { Express, Request, Response } from 'express'
+import { createServer } from 'http'
+import type { Server as HTTPServer } from 'http'
 import { Server } from 'socket.io'
 import type { Socket } from 'socket.io'
 import cors from 'cors'
@@ -11,7 +11,7 @@ import { generateRoomCode } from './utils'
 
 dotenv.config()
 
-const app: Application = express()
+const app: Express = express()
 const httpServer: HTTPServer = createServer(app)
 const io = new Server(httpServer, {
   cors: {

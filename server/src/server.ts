@@ -1,5 +1,5 @@
 import express from 'express'
-import type { Request, Response } from 'express'
+import type { Request, Response } from 'express-serve-static-core'
 import { createServer } from 'http'
 import type { Server as HTTPServer } from 'http'
 import { Server } from 'socket.io'

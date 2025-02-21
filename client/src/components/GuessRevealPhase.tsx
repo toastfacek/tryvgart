@@ -1,17 +1,16 @@
 import React, { useState } from 'react'
-import io from '../services/socket'
-import { Answer } from '../types/Answer'
-import { Player } from '../types/Player'
-import GuessingInterface from './GuessingInterface'
+import { socket } from '../utils/socket'
+import { Answer } from '../types/game'
+import { Player } from '../types/game'
 import RevealInterface from './RevealInterface'
 
-interface Props {
+interface GuessRevealPhaseProps {
   roomCode: string
   players: Player[]
   isHost: boolean
 }
 
-const GuessRevealPhase: React.FC<Props> = ({ roomCode, players, isHost }) => {
+const GuessRevealPhase: React.FC<GuessRevealPhaseProps> = ({ roomCode, players, isHost }) => {
   const [prompts, setPrompts] = useState<string[]>([])
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0)
   const [answers, setAnswers] = useState<Answer[]>([])
@@ -20,7 +19,22 @@ const GuessRevealPhase: React.FC<Props> = ({ roomCode, players, isHost }) => {
   const [submittedPlayers, setSubmittedPlayers] = useState<string[]>([])
   const [revealed, setRevealed] = useState(false)
 
-  // ... socket listeners and handlers ...
+  const handleGuessSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    socket.emit('submit_guesses', { roomCode, guesses })
+    setSubmitted(true)
+  }
+
+  const handlePlayerSelect = (answerIndex: number, playerId: string) => {
+    setGuesses(prev => ({
+      ...prev,
+      [answerIndex]: playerId
+    }))
+  }
+
+  const handleNextPrompt = () => {
+    socket.emit('next_prompt', { roomCode })
+  }
 
   return (
     <div className="container">
@@ -34,21 +48,20 @@ const GuessRevealPhase: React.FC<Props> = ({ roomCode, players, isHost }) => {
       </div>
 
       {!revealed ? (
-        // Show guessing interface
-        <GuessingInterface 
-          answers={answers}
-          players={players}
-          guesses={guesses}
-          onGuessSubmit={handleGuessSubmit}
-          onPlayerSelect={handlePlayerSelect}
-          submitted={submitted}
-        />
+        <div>
+          <button onClick={handleNextPrompt}>
+            Next Prompt
+          </button>
+        </div>
       ) : (
-        // Show reveal interface
-        <RevealInterface 
+        <RevealInterface
           answers={answers}
           guesses={guesses}
           players={players}
+          scores={[]}
+          isLastPrompt={false}
+          isHost={isHost}
+          roomCode={roomCode}
         />
       )}
 

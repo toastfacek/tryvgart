@@ -1,5 +1,5 @@
 import express from 'express'
-import type { Express, Request, Response } from 'express'
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express-serve-static-core'
 import { createServer } from 'http'
 import type { Server as HTTPServer } from 'http'
 import { Server } from 'socket.io'
@@ -11,7 +11,7 @@ import { generateRoomCode } from './utils'
 
 dotenv.config()
 
-const app: Express = express()
+const app = express()
 const httpServer: HTTPServer = createServer(app)
 const io = new Server(httpServer, {
   cors: {
@@ -110,6 +110,10 @@ interface ResetGameData {
 interface RoomCreatedPayload {
   roomCode: string;
   room: Room;
+}
+
+interface HealthResponse {
+  status: string;
 }
 
 io.on('connection', (socket: Socket) => {
@@ -434,8 +438,8 @@ io.on('connection', (socket: Socket) => {
 })
 
 // Utils
-app.get('/health', (_: Request, res: Response) => {
-  res.json({ status: 'ok' })
+app.get('/health', (_: ExpressRequest, res: ExpressResponse) => {
+  res.json({ status: 'ok' } as HealthResponse)
 })
 
 const PORT = process.env.PORT || 3000

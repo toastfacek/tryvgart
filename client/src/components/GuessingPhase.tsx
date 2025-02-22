@@ -115,10 +115,10 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-purple-900 to-purple-800">
-      <div className="w-full max-w-2xl mx-auto p-6 space-y-6">
+    <div className="page-container min-h-screen flex items-center justify-center">
+      <div className="w-full max-w-2xl mx-auto space-y-6">
         {/* Question Display */}
-        <div className="rounded-xl bg-purple-900/50 p-6 backdrop-blur-sm border border-purple-700/50">
+        <div className="translucent-container">
           <h2 className="text-lg text-center text-cyan-300 mb-2">
             Question {currentPromptIndex + 1} of {prompts.length}
           </h2>
@@ -131,7 +131,7 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
         {!submittedPlayers.includes(socket.id) && (
           <div className="space-y-4">
             {answers.map((answer) => (
-              <div key={answer.playerId} className="rounded-lg bg-purple-900/50 p-4 border border-purple-700/50">
+              <div key={answer.playerId} className="translucent-container">
                 <p className="text-lg mb-4">{answer.text}</p>
                 <select
                   value={myGuesses[answer.playerId] || ''}
@@ -156,7 +156,7 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
             <button
               onClick={handleGuessSubmit}
               disabled={Object.keys(myGuesses).length !== answers.length}
-              className="w-full py-3 px-6 rounded-full bg-fuchsia-600 hover:bg-fuchsia-500 
+              className="button w-full py-3 bg-fuchsia-600 hover:bg-fuchsia-500 
                        disabled:bg-gray-600 disabled:cursor-not-allowed
                        text-white font-bold transition-colors"
             >
@@ -172,11 +172,11 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
             {players.map(player => (
               <div 
                 key={player.id} 
-                className={`flex items-center justify-between p-3 rounded-lg 
-                  ${submittedPlayers.includes(player.id) 
+                className={`translucent-container flex items-center justify-between ${
+                  submittedPlayers.includes(player.id) 
                     ? 'bg-green-900/30 border-green-500/30' 
-                    : 'bg-purple-900/30 border-purple-500/30'
-                  } border`}
+                    : ''
+                }`}
               >
                 <div className="flex items-center gap-2">
                   <span>{player.emoji}</span>
@@ -194,7 +194,7 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
         {isHost && submittedPlayers.length === players.length && (
           <button
             onClick={() => socket.emit('reveal_answers', { roomCode })}
-            className="w-full py-3 px-6 rounded-full bg-fuchsia-600 hover:bg-fuchsia-500 
+            className="button w-full py-3 bg-fuchsia-600 hover:bg-fuchsia-500 
                      text-white font-bold transition-colors"
           >
             Everyone's Done - Show Results

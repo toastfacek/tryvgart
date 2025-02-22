@@ -63,7 +63,7 @@ const PromptPhase: React.FC<PromptPhaseProps> = ({ roomCode, players, isHost }) 
 
         {!submitted ? (
           <form onSubmit={handleSubmitPrompt} className="form-container">
-            <div className="form-group">
+            <div className="translucent-container">
               <label htmlFor="prompt" className="input-label">
                 Your Question:
               </label>
@@ -86,7 +86,7 @@ const PromptPhase: React.FC<PromptPhaseProps> = ({ roomCode, players, isHost }) 
             </button>
           </form>
         ) : (
-          <div className="text-center text-lg text-secondary p-4">
+          <div className="translucent-container text-center text-lg text-secondary">
             {isTransitioning ? 'Moving to answer phase...' :
               allPromptsSubmitted ? 'All questions submitted!' : 'Waiting for other players...'}
           </div>
@@ -98,7 +98,11 @@ const PromptPhase: React.FC<PromptPhaseProps> = ({ roomCode, players, isHost }) 
             {players.map(player => (
               <div 
                 key={player.id} 
-                className={`player-item ${submittedPlayers.includes(player.id) ? 'submitted' : ''}`}
+                className={`translucent-container flex items-center justify-between ${
+                  submittedPlayers.includes(player.id) 
+                    ? 'bg-green-900/30 border-green-500/30' 
+                    : ''
+                }`}
               >
                 <span className="text-2xl">{player.emoji}</span>
                 <span className="flex-1">{player.name}</span>

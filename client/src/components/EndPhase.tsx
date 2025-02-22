@@ -12,7 +12,7 @@ const EndPhase: React.FC<EndPhaseProps> = ({ scores, isHost, onPlayAgain, onRetu
   return (
     <div className="flex flex-col items-center justify-center p-8">
       <h1 className="text-4xl font-bold mb-8 gradient-text">Game Over!</h1>
-      <div className="space-y-4">
+      <div className="translucent-container space-y-4">
         {scores.map(([player, score], index) => (
           <div key={player.id} className="flex items-center gap-4 text-xl">
             <span className="text-2xl">{index === 0 ? '👑' : ''} {player.emoji}</span>

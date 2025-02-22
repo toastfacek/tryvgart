@@ -164,7 +164,7 @@ const RevealPhase: React.FC<RevealPhaseProps> = ({ roomCode, players, isHost, on
     <div className="page-container min-h-screen flex items-center justify-center">
       <div className="w-[800px] flex flex-col items-center space-y-8">
         {/* Current Prompt */}
-        <div className="w-full bg-purple-900/30 p-6 rounded-xl border-2 border-purple-500/50">
+        <div className="w-full translucent-container">
           <h2 className="game-title text-2xl text-center mb-4">Question</h2>
           <p className="text-xl text-center gradient-text">{prompts[currentPromptIndex]}</p>
         </div>
@@ -174,14 +174,12 @@ const RevealPhase: React.FC<RevealPhaseProps> = ({ roomCode, players, isHost, on
           {answers.map((answer, index) => (
             <div 
               key={answer.playerId}
-              className="bg-purple-900/30 p-6 rounded-xl border-2 border-purple-500/50"
+              className="translucent-container"
             >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center gap-2 bg-fuchsia-900/30 px-4 py-2 rounded-lg border border-fuchsia-500/50">
-                  <span className="text-2xl">{answer.authorEmoji}</span>
-                  <span className="gradient-text text-xl">{answer.authorName}</span>
-                  <span className="text-fuchsia-400 font-medium">wrote:</span>
-                </div>
+              <div className="flex items-center gap-2 bg-fuchsia-900/30 px-4 py-2 rounded-lg border border-fuchsia-500/50">
+                <span className="text-2xl">{answer.authorEmoji}</span>
+                <span className="gradient-text text-xl">{answer.authorName}</span>
+                <span className="text-fuchsia-400 font-medium">wrote:</span>
               </div>
               <p className="text-lg text-white/90 mb-6 bg-purple-900/20 p-4 rounded-lg border border-purple-500/30 font-medium">
                 "{answer.text}"
@@ -202,11 +200,11 @@ const RevealPhase: React.FC<RevealPhaseProps> = ({ roomCode, players, isHost, on
                     return (
                       <div 
                         key={player.id}
-                        className={`flex items-center gap-4 p-3 rounded-lg ${
+                        className={`translucent-container flex items-center gap-4 ${
                           guessedCorrectly 
-                            ? 'bg-green-900/20 border-green-500/50' 
-                            : 'bg-purple-900/20 border-purple-500/50'
-                        } border transition-colors duration-200`}
+                            ? 'bg-green-900/30 border-green-500/30' 
+                            : ''
+                        }`}
                       >
                         <div className="flex items-center gap-2 min-w-[120px]">
                           <span className="text-xl">{player.emoji}</span>
@@ -239,7 +237,7 @@ const RevealPhase: React.FC<RevealPhaseProps> = ({ roomCode, players, isHost, on
         </div>
 
         {/* Current Scores */}
-        <div className="w-full bg-purple-900/30 p-6 rounded-xl border-2 border-purple-500/50">
+        <div className="w-full translucent-container">
           <h2 className="game-title text-2xl text-center mb-4">Current Scores</h2>
           <div className="space-y-2">
             {scores
@@ -247,8 +245,7 @@ const RevealPhase: React.FC<RevealPhaseProps> = ({ roomCode, players, isHost, on
               .map(([player, score]) => (
                 <div 
                   key={player.id}
-                  className="flex items-center justify-between p-2 rounded-lg
-                           bg-purple-900/20 border border-purple-500/50"
+                  className="translucent-container flex items-center justify-between"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{player.emoji}</span>

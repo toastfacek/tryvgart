@@ -4,7 +4,7 @@ import { SERVER_URL } from '../config'
 import { Room } from '../types/game'
 
 // Define extended Socket type that includes onAny and offAny
-interface ExtendedSocket extends Socket<DefaultEventsMap, DefaultEventsMap> {
+export interface ExtendedSocket extends Socket<DefaultEventsMap, DefaultEventsMap> {
   onAny: (listener: (eventName: string, ...args: any[]) => void) => this;
   offAny: (listener: (eventName: string, ...args: any[]) => void) => this;
 }

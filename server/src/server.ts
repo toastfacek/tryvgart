@@ -18,14 +18,23 @@ const io = new Server(httpServer, {
   cors: {
     origin: [
       process.env.CLIENT_URL || 'http://localhost:5173',
-      'https://tryvgart.vercel.app'
+      'https://tryvgart.vercel.app',
+      'https://tryvgart-server.onrender.com'
     ],
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST'],
+    credentials: true
   } as CorsOptions
 })
 
 // Middleware
-app.use(cors())
+app.use(cors({
+  origin: [
+    process.env.CLIENT_URL || 'http://localhost:5173',
+    'https://tryvgart.vercel.app',
+    'https://tryvgart-server.onrender.com'
+  ],
+  credentials: true
+}))
 app.use(express.json())
 
 // Initialize managers

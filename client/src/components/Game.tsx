@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate, Location } from 'react-router-dom'
 import { socket } from '../utils/socket'
+import type { Socket as ClientSocket } from 'socket.io-client'
 import WaitingRoom from './WaitingRoom'
 import PromptPhase from './PromptPhase'
 import AnswerPhase from './AnswerPhase'
@@ -145,9 +146,10 @@ const Game = () => {
     })
 
     // Debug events
-    const debugListener = (eventName: string, ...args: any[]) => {
-      console.log('Game: Socket event:', eventName, args)
+    const debugListener = (event: string, ...args: unknown[]) => {
+      console.log('Game: Socket event:', event, args)
     }
+
     socket.onAny(debugListener)
 
     return () => {

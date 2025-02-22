@@ -1,9 +1,9 @@
-import io from 'socket.io-client'
+import { io, Socket as ClientSocket } from 'socket.io-client'
 import { SERVER_URL } from '../config'
 import { Room } from '../types/game'
 
 // Connect to the server's WebSocket endpoint
-export const socket = io(process.env.REACT_APP_SERVER_URL || 'http://localhost:3001', {
+export const socket: ClientSocket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:3001', {
   autoConnect: true,
   reconnection: true,
 })

@@ -14,11 +14,11 @@ interface GuessingPhaseProps {
 }
 
 interface GuessSubmittedEvent {
-  playerId: string;
+  playerId: string
 }
 
 interface NextPromptEvent {
-  promptIndex: number;
+  promptIndex: number
 }
 
 const GuessingPhase: React.FC<GuessingPhaseProps> = ({ 
@@ -98,14 +98,18 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
   }, [initialAnswers])
 
   const handleGuessSubmit = () => {
-    if (Object.keys(myGuesses).length !== answers.length) return
+    if (Object.keys(myGuesses).length !== answers.length || !socket.id) return
     
     socket.emit('submit_guesses', {
       roomCode,
       promptIndex: currentPromptIndex,
       guesses: myGuesses
     })
-    setSubmittedPlayers(prev => [...prev, socket.id])
+    
+    // Ensure socket.id is not undefined before adding to array
+    if (socket.id) {
+      setSubmittedPlayers(prev => [...prev, socket.id as string])
+    }
   }
 
   if (!prompts.length || !answers.length) {
@@ -136,7 +140,7 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
         </div>
 
         {/* Answer Selection */}
-        {!submittedPlayers.includes(socket.id) && (
+        {socket.id && !submittedPlayers.includes(socket.id) && (
           <div className="space-y-4">
             {answers.map((answer) => (
               <div key={answer.playerId} className="translucent-container">

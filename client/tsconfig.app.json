@@ -20,7 +20,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": false,
-    "types": ["node", "react", "react-dom", "socket.io-client"],
     "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "include": ["src/**/*", "src/**/*.ts", "src/**/*.tsx", "src/types/*.d.ts"],

@@ -82,18 +82,18 @@ const Game = () => {
     ] as const;
 
     // Game phase events
-    (socket as ExtendedSocket).on('game_started', () => {
+    socket.on('game_started', () => {
       console.log('Game started - moving to prompt phase')
       setGamePhase('prompt')
     })
 
-    (socket as ExtendedSocket).on('answer_phase_started', (data: { prompt: string }) => {
+    socket.on('answer_phase_started', (data: { prompt: string }) => {
       console.log('Game: Answer phase started - moving to answer phase', data)
       setCurrentPrompt(data.prompt)
       setGamePhase('answer')
     })
 
-    (socket as ExtendedSocket).on('guess_phase_started', (data: GuessPhaseData) => {
+    socket.on('guess_phase_started', (data: GuessPhaseData) => {
       console.log('Game: Guess phase started with data:', data)
       console.log('Game: Raw guess phase data:', {
         prompts: data.prompts,
@@ -106,28 +106,28 @@ const Game = () => {
       setGamePhase('guess')
     })
 
-    (socket as ExtendedSocket).on('reveal_answers', (data: RevealData) => {
+    socket.on('reveal_answers', (data: RevealData) => {
       console.log('Game: Moving to reveal phase for current prompt')
       console.log('Game: Reveal answers data:', data)
       setRevealData(data)
       setGamePhase('reveal')
     })
 
-    (socket as ExtendedSocket).on('game_ended', (scores: [Player, number][]) => {
+    socket.on('game_ended', (scores: [Player, number][]) => {
       setFinalScores(scores)
       setGamePhase('end')
     })
 
     // Player events
-    (socket as ExtendedSocket).on('player_joined', ({ player }: { player: Player }) => {
+    socket.on('player_joined', ({ player }: { player: Player }) => {
       setPlayers(prev => [...prev, player])
     })
 
-    (socket as ExtendedSocket).on('player_left', ({ playerId }: { playerId: string }) => {
+    socket.on('player_left', ({ playerId }: { playerId: string }) => {
       setPlayers(prev => prev.filter(p => p.id !== playerId))
     })
 
-    (socket as ExtendedSocket).on('players_updated', (updatedPlayers: Player[]) => {
+    socket.on('players_updated', (updatedPlayers: Player[]) => {
       setPlayers(updatedPlayers)
     })
 
@@ -136,12 +136,12 @@ const Game = () => {
       console.log('Game: Socket event:', event, args)
     }
 
-    (socket as ExtendedSocket).onAny(debugListener)
+    socket.onAny(debugListener)
 
     return () => {
       console.log('Game: Cleaning up socket event listeners')
       events.forEach(event => socket.off(event))
-      ;(socket as ExtendedSocket).offAny(debugListener)
+      socket.offAny(debugListener)
     }
   }, [roomCode, navigate])
 

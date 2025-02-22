@@ -13,6 +13,10 @@ interface PromptPhaseProps {
   isHost: boolean
 }
 
+interface PromptSubmittedEvent {
+  playerId: string;
+}
+
 const PromptPhase: React.FC<PromptPhaseProps> = ({ roomCode, players, isHost }) => {
   const [prompt, setPrompt] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -22,7 +26,7 @@ const PromptPhase: React.FC<PromptPhaseProps> = ({ roomCode, players, isHost }) 
   const currentPlayer = players.find(p => p.id === socket.id)
 
   useEffect(() => {
-    socket.on('prompt_submitted', ({ playerId }) => {
+    socket.on('prompt_submitted', ({ playerId }: PromptSubmittedEvent) => {
       console.log('Prompt submitted by:', playerId)
       setSubmittedPlayers(prev => [...prev, playerId])
     })

@@ -13,6 +13,14 @@ interface GuessingPhaseProps {
   }>
 }
 
+interface GuessSubmittedEvent {
+  playerId: string;
+}
+
+interface NextPromptEvent {
+  promptIndex: number;
+}
+
 const GuessingPhase: React.FC<GuessingPhaseProps> = ({ 
   roomCode, 
   players, 
@@ -68,11 +76,11 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
   }, [prompts, initialAnswers, players, currentPromptIndex, answers])
 
   useEffect(() => {
-    socket.on('guess_submitted', ({ playerId }) => {
+    socket.on('guess_submitted', ({ playerId }: GuessSubmittedEvent) => {
       setSubmittedPlayers(prev => [...prev, playerId])
     })
 
-    socket.on('next_prompt', ({ promptIndex }) => {
+    socket.on('next_prompt', ({ promptIndex }: NextPromptEvent) => {
       setCurrentPromptIndex(promptIndex)
       setMyGuesses({})
       setSubmittedPlayers([])

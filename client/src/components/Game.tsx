@@ -92,7 +92,7 @@ const Game = () => {
       'game_ended',
       'game_phase_changed',
       'players_updated'
-    ]
+    ] as const;
 
     // Game phase events
     socket.on('game_started', () => {
@@ -132,11 +132,11 @@ const Game = () => {
     })
 
     // Player events
-    socket.on('player_joined', ({ player }) => {
+    socket.on('player_joined', ({ player }: { player: Player }) => {
       setPlayers(prev => [...prev, player])
     })
 
-    socket.on('player_left', ({ playerId }) => {
+    socket.on('player_left', ({ playerId }: { playerId: string }) => {
       setPlayers(prev => prev.filter(p => p.id !== playerId))
     })
 
@@ -145,7 +145,7 @@ const Game = () => {
     })
 
     // Debug events
-    socket.onAny((eventName, ...args) => {
+    socket.onAny((eventName: string, ...args: unknown[]) => {
       console.log('Game: Socket event:', eventName, args)
     })
 

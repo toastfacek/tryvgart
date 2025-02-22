@@ -17,14 +17,10 @@ const PromptPhase: React.FC<PromptPhaseProps> = ({ roomCode, players, isHost }) 
   const [prompt, setPrompt] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [submittedPlayers, setSubmittedPlayers] = useState<string[]>([])
+  const [allPromptsSubmitted, setAllPromptsSubmitted] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const currentPlayer = players.find(p => p.id === socket.id)
 
-  const handleSubmitPrompt = (e: React.FormEvent) => {
-    e.preventDefault()
-    socket.emit('submit_prompt', { roomCode, prompt })
-    setSubmitted(true)
-  }
-
-  // Listen for other players' submissions
   useEffect(() => {
     socket.on('prompt_submitted', ({ playerId }) => {
       console.log('Prompt submitted by:', playerId)
@@ -33,6 +29,7 @@ const PromptPhase: React.FC<PromptPhaseProps> = ({ roomCode, players, isHost }) 
 
     socket.on('all_prompts_submitted', () => {
       console.log('All prompts submitted')
+      setAllPromptsSubmitted(true)
     })
 
     return () => {
@@ -41,61 +38,90 @@ const PromptPhase: React.FC<PromptPhaseProps> = ({ roomCode, players, isHost }) 
     }
   }, [])
 
+  const handleSubmitPrompt = (e: React.FormEvent) => {
+    e.preventDefault()
+    socket.emit('submit_prompt', { roomCode, prompt })
+    setSubmitted(true)
+    if (currentPlayer) {
+      setSubmittedPlayers(prev => [...prev, currentPlayer.id])
+    }
+  }
+
+  const handleStartAnswerPhase = () => {
+    if (!allPromptsSubmitted || isTransitioning) return
+    console.log('Starting answer phase')
+    setIsTransitioning(true)
+    socket.emit('start_answer_phase', { roomCode })
+  }
+
+  const canProceed = isHost && allPromptsSubmitted && !isTransitioning
+
   return (
-    <div className="container">
-      <h2>Submit Your Question</h2>
-      {!submitted ? (
-        <form onSubmit={handleSubmitPrompt}>
-          <div className="form-group">
-            <label htmlFor="prompt">Your Question:</label>
-            <textarea
-              id="prompt"
-              className="prompt-input"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter a fun question for others to answer..."
-              required
-              maxLength={200}
-              rows={3}
-            />
-            <div className="char-count">
-              {prompt.length}/200
+    <div className="page-container">
+      <div className="content-container">
+        <h1 className="section-title">Submit Your Question</h1>
+
+        {!submitted ? (
+          <form onSubmit={handleSubmitPrompt} className="form-container">
+            <div className="form-group">
+              <label htmlFor="prompt" className="input-label">
+                Your Question:
+              </label>
+              <textarea
+                id="prompt"
+                className="text-input min-h-[100px] resize-none"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Enter a fun question for others to answer..."
+                required
+                maxLength={200}
+                rows={3}
+              />
+              <div className="text-right text-sm text-white/70">
+                {prompt.length}/200
+              </div>
             </div>
+            <button type="submit" className="button w-full">
+              Submit Question
+            </button>
+          </form>
+        ) : (
+          <div className="text-center text-lg text-secondary p-4">
+            {isTransitioning ? 'Moving to answer phase...' :
+              allPromptsSubmitted ? 'All questions submitted!' : 'Waiting for other players...'}
           </div>
-          <button type="submit" className="button">
-            Submit Question
-          </button>
-        </form>
-      ) : (
-        <div className="waiting-message">
-          Waiting for other players...
+        )}
+
+        <div className="mt-8">
+          <h3 className="text-lg text-primary mb-4">Players Ready</h3>
+          <div className="player-list">
+            {players.map(player => (
+              <div 
+                key={player.id} 
+                className={`player-item ${submittedPlayers.includes(player.id) ? 'submitted' : ''}`}
+              >
+                <span className="text-2xl">{player.emoji}</span>
+                <span className="flex-1">{player.name}</span>
+                {submittedPlayers.includes(player.id) && (
+                  <span className="text-green-400">✓</span>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      )}
 
-      <div className="submission-status">
-        <h3>Players Ready</h3>
-        {players.map(player => (
-          <div 
-            key={player.id} 
-            className={`player-item ${submittedPlayers.includes(player.id) ? 'submitted' : ''}`}
-          >
-            <span className="player-emoji">{player.emoji}</span>
-            <span className="player-name">{player.name}</span>
-            {submittedPlayers.includes(player.id) && (
-              <span className="status-icon">✓</span>
-            )}
+        {canProceed && (
+          <div className="button-container">
+            <button 
+              className="button"
+              onClick={handleStartAnswerPhase}
+              disabled={isTransitioning}
+            >
+              Start Answer Phase
+            </button>
           </div>
-        ))}
+        )}
       </div>
-
-      {isHost && submittedPlayers.length === players.length && (
-        <button 
-          className="button"
-          onClick={() => socket.emit('start_answer_phase', { roomCode })}
-        >
-          Everyone's Ready - Start Answer Phase
-        </button>
-      )}
     </div>
   )
 }

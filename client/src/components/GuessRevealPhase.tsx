@@ -1,89 +1,133 @@
-import React, { useState } from 'react'
-import { socket } from '../utils/socket'
-import { Answer } from '../types/game'
-import { Player } from '../types/game'
-import RevealInterface from './RevealInterface'
+useEffect(() => {
+  const events = [
+    'guess_phase_started',
+    'reveal_answers',
+    'game_reset',
+    'next_prompt',
+    'guess_submitted',
+    'score_update'
+  ]
 
-interface GuessRevealPhaseProps {
-  roomCode: string
-  players: Player[]
-  isHost: boolean
-}
+  socket.on('guess_phase_started', (phaseData: GuessPhaseData) => {
+    console.log('Guess phase started with data:', phaseData)
+    if (!phaseData?.prompts || !phaseData?.answers) {
+      console.error('Invalid guess phase data:', phaseData)
+      return
+    }
 
-const GuessRevealPhase: React.FC<GuessRevealPhaseProps> = ({ roomCode, players, isHost }) => {
-  const [prompts, setPrompts] = useState<string[]>([])
-  const [currentPromptIndex, setCurrentPromptIndex] = useState(0)
-  const [answers, setAnswers] = useState<Answer[]>([])
-  const [guesses, setGuesses] = useState<Record<number, string>>({})
-  const [submitted, setSubmitted] = useState(false)
-  const [submittedPlayers, setSubmittedPlayers] = useState<string[]>([])
-  const [revealed, setRevealed] = useState(false)
+    setPrompts(phaseData.prompts)
+    setIsGuessing(true)
+    
+    // Start with first prompt
+    const promptIndex = 0
+    setCurrentPromptIndex(promptIndex)
+    
+    // Get all answers for current prompt and ensure they're properly formatted
+    const currentAnswers = phaseData.answers.find(a => a.promptIndex === promptIndex)
+    if (currentAnswers?.answers) {
+      console.log('Setting answers:', currentAnswers.answers)
+      setAnswers(currentAnswers.answers.map(answer => ({
+        ...answer,
+        playerId: answer.playerId || '',
+        text: answer.text || '',
+        authorName: answer.authorName || '',
+        authorEmoji: answer.authorEmoji || ''
+      })))
+    }
+    
+    // Reset states
+    setMyGuesses({})
+    setSubmittedPlayers([])
+  })
 
-  const handleGuessSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    socket.emit('submit_guesses', { roomCode, guesses })
-    setSubmitted(true)
+  socket.on('reveal_answers', (revealData: RevealData) => {
+    console.log('Reveal answers data:', revealData)
+    
+    // Handle both possible data structures
+    const data = revealData.data || revealData
+    if (!data || !data.answers) {
+      console.error('Invalid reveal data structure:', revealData)
+      return
+    }
+
+    try {
+      setAnswers(data.answers)
+      setIsGuessing(false)
+      
+      if (data.scores) {
+        setScores(data.scores.map(score => [score.player, score.score]))
+      }
+      
+      if (data.guesses) {
+        setGuesses(data.guesses)
+      }
+    } catch (err) {
+      console.error('Error processing reveal data:', err)
+    }
+  })
+
+  socket.on('game_reset', () => {
+    navigate('/')
+  })
+
+  socket.on('next_prompt', (data) => {
+    console.log('Next prompt data:', data)
+    setCurrentPromptIndex(data.promptIndex)
+    setIsGuessing(true)
+    setMyGuesses({})
+  })
+
+  socket.on('guess_submitted', ({ playerId }) => {
+    console.log('Guess submitted by:', playerId)
+    setSubmittedPlayers(prev => [...prev, playerId])
+  })
+
+  socket.on('score_update', (data) => {
+    if (!data.verified) {
+      console.error('Received unverified score data')
+      return
+    }
+    setScores(data.scores)
+  })
+
+  // Cleanup
+  return () => {
+    events.forEach(event => socket.off(event))
   }
+}, [navigate]) // Remove currentPromptIndex dependency
 
-  const handlePlayerSelect = (answerIndex: number, playerId: string) => {
-    setGuesses(prev => ({
-      ...prev,
-      [answerIndex]: playerId
-    }))
-  }
+// Add debug logging for answers and players
+useEffect(() => {
+  console.log('Current answers:', answers)
+  console.log('Available players:', players)
+}, [answers, players])
 
-  const handleNextPrompt = () => {
-    socket.emit('next_prompt', { roomCode })
-  }
+// ... rest of the component code ...
 
-  return (
-    <div className="container">
-      <div className="progress-bar">
-        Question {currentPromptIndex + 1} of {prompts.length}
-      </div>
-
-      <div className="prompt-display">
-        <h2>Question:</h2>
-        <p className="prompt-text">{prompts[currentPromptIndex]}</p>
-      </div>
-
-      {!revealed ? (
-        <div>
-          <button onClick={handleNextPrompt}>
-            Next Prompt
-          </button>
-        </div>
-      ) : (
-        <RevealInterface
-          answers={answers}
-          guesses={guesses}
-          players={players}
-          scores={[]}
-          isLastPrompt={false}
-          isHost={isHost}
-          roomCode={roomCode}
-        />
-      )}
-
-      {isHost && revealed && currentPromptIndex < prompts.length - 1 && (
-        <button 
-          className="button"
-          onClick={handleNextPrompt}
+// In the render section where we map over answers, add logging:
+{answers.map((answer, index) => (
+  <div key={answer.playerId || index} className="rounded-lg bg-purple-900/50 p-4 border border-purple-700/50">
+    <p className="text-lg mb-4">{answer.text}</p>
+    <select
+      value={myGuesses[answer.playerId] || ''}
+      onChange={(e) => {
+        console.log('Selected player:', e.target.value, 'for answer:', answer)
+        setMyGuesses(prev => ({
+          ...prev,
+          [answer.playerId]: e.target.value
+        }))
+      }}
+      className="w-full p-2 rounded bg-darker text-white border border-purple-500"
+    >
+      <option value="">Who wrote this?</option>
+      {players.map(player => (
+        <option
+          key={player.id}
+          value={player.id}
         >
-          Next Question
-        </button>
-      )}
-
-      {isHost && revealed && currentPromptIndex === prompts.length - 1 && (
-        <button 
-          className="button"
-          onClick={() => socket.emit('end_game', { roomCode })}
-        >
-          End Game
-        </button>
-      )}
-    </div>
-  )
-}
-
-export default GuessRevealPhase 
+          {player.emoji} {player.name}
+        </option>
+      ))}
+    </select>
+  </div>
+))} 

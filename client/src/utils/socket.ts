@@ -1,17 +1,31 @@
 import { io } from 'socket.io-client'
 import { SERVER_URL } from '../config'
+import { Room } from '../types/game'
 
 export const socket = io(SERVER_URL)
 
-export const createRoom = (playerName: string, emoji: string) => {
+interface RoomCreatedResponse {
+  roomCode: string
+  room: Room
+}
+
+interface RoomJoinedResponse {
+  room: Room
+}
+
+interface SocketError {
+  message: string
+}
+
+export const createRoom = (playerName: string, emoji: string): Promise<RoomCreatedResponse> => {
   return new Promise((resolve, reject) => {
-    const handleRoomCreated = ({ roomCode, room }: any) => {
+    const handleRoomCreated = (data: RoomCreatedResponse) => {
       socket.off('room_created', handleRoomCreated)
       socket.off('error', handleError)
-      resolve({ roomCode, room })
+      resolve(data)
     }
 
-    const handleError = (error: any) => {
+    const handleError = (error: SocketError) => {
       socket.off('room_created', handleRoomCreated)
       socket.off('error', handleError)
       reject(error)
@@ -19,19 +33,22 @@ export const createRoom = (playerName: string, emoji: string) => {
 
     socket.on('room_created', handleRoomCreated)
     socket.on('error', handleError)
-    socket.emit('create_room', { playerName, emoji })
+    socket.emit('create_room', { 
+      playerName: playerName.trim(),
+      playerEmoji: emoji
+    })
   })
 }
 
-export const joinRoom = (roomCode: string, playerName: string, emoji: string) => {
+export const joinRoom = (roomCode: string, playerName: string, emoji: string): Promise<Room> => {
   return new Promise((resolve, reject) => {
-    const handleRoomJoined = ({ room }: any) => {
+    const handleRoomJoined = ({ room }: RoomJoinedResponse) => {
       socket.off('room_joined', handleRoomJoined)
       socket.off('error', handleError)
       resolve(room)
     }
 
-    const handleError = (error: any) => {
+    const handleError = (error: SocketError) => {
       socket.off('room_joined', handleRoomJoined)
       socket.off('error', handleError)
       reject(error)
@@ -41,4 +58,12 @@ export const joinRoom = (roomCode: string, playerName: string, emoji: string) =>
     socket.on('error', handleError)
     socket.emit('join_room', { roomCode, playerName, emoji })
   })
-} 
+}
+
+// Should handle reconnection and rejoin room
+socket.on('reconnect', () => {
+  const currentRoom = localStorage.getItem('currentRoom')
+  if (currentRoom) {
+    socket.emit('rejoin_room', { roomCode: currentRoom })
+  }
+}) 

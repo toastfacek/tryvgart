@@ -1,166 +1,138 @@
 import React, { useState, useEffect } from 'react'
 import { socket } from '../utils/socket'
-
-interface Player {
-  id: string
-  name: string
-  emoji: string
-}
+import { Player } from '../types/game'
+import LoadingSpinner from './LoadingSpinner'
 
 interface AnswerPhaseProps {
   roomCode: string
   players: Player[]
   isHost: boolean
+  currentPrompt: string
 }
 
-const AnswerPhase: React.FC<AnswerPhaseProps> = ({ roomCode, players, isHost }) => {
-  const [prompts, setPrompts] = useState<string[]>([])
-  const [currentPromptIndex, setCurrentPromptIndex] = useState(0)
+const AnswerPhase: React.FC<AnswerPhaseProps> = ({ roomCode, players, isHost, currentPrompt }) => {
   const [answer, setAnswer] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const [answeredPlayers, setAnsweredPlayers] = useState<string[]>([])
-  const [allAnswersSubmitted, setAllAnswersSubmitted] = useState(false)
-
-  useEffect(() => {
-    // Remove any existing listeners first
-    socket.off('answer_phase_started')
-    socket.off('answer_submitted')
-    socket.off('all_answers_submitted')
-
-    socket.on('answer_phase_started', (data) => {
-      console.log('Answer phase started with data:', data)
-      if (Array.isArray(data.prompts)) {
-        setPrompts(data.prompts)
-      } else {
-        console.error('Received invalid prompts data:', data)
-      }
-    })
-
-    // Re-emit to get prompts in case we missed the initial event
-    if (isHost) {
-      console.log('Re-requesting answer phase start')
-      socket.emit('start_answer_phase', { roomCode })
-    }
-
-    socket.on('answer_submitted', ({ playerId }) => {
-      console.log('Answer submitted by:', playerId)
-      setAnsweredPlayers(prev => [...prev, playerId])
-    })
-
-    socket.on('all_answers_submitted', () => {
-      console.log('All answers submitted for current prompt')
-      setAllAnswersSubmitted(true)
-    })
-
-    return () => {
-      socket.off('answer_phase_started')
-      socket.off('answer_submitted')
-      socket.off('all_answers_submitted')
-    }
-  }, [roomCode, isHost])
-
-  useEffect(() => {
-    console.log('Current prompts:', prompts)
-    console.log('Current prompt index:', currentPromptIndex)
-  }, [prompts, currentPromptIndex])
+  const [hasSubmitted, setHasSubmitted] = useState(false)
+  const [submittedPlayers, setSubmittedPlayers] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmitAnswer = (e: React.FormEvent) => {
     e.preventDefault()
-    socket.emit('submit_answer', { 
-      roomCode, 
-      promptIndex: currentPromptIndex,
-      answer 
+    if (!answer.trim()) return
+
+    setIsLoading(true)
+    socket.emit('submit_answer', {
+      roomCode,
+      answer: answer.trim()
     })
-    setSubmitted(true)
-    setAnswer('')
   }
 
-  const handleNextQuestion = () => {
-    if (isHost) {
-      socket.emit('next_question', { roomCode })
+  useEffect(() => {
+    const events = ['player_submitted_answer']
+
+    socket.on('player_submitted_answer', (data: { playerId: string }) => {
+      console.log('AnswerPhase: Player submitted answer:', data.playerId)
+      if (data.playerId === socket.id) {
+        setHasSubmitted(true)
+        setIsLoading(false)
+      }
+      setSubmittedPlayers(prev => [...prev, data.playerId])
+    })
+
+    // Debug logging for component mount
+    console.log('AnswerPhase: Component mounted with players:', players)
+
+    return () => {
+      console.log('AnswerPhase: Component unmounting')
+      events.forEach(event => socket.off(event))
     }
-  }
+  }, [])
 
-  if (!prompts.length) {
-    console.log('No prompts available yet')
-    return <div>Loading prompts...</div>
-  }
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('AnswerPhase: Submitted players updated:', submittedPlayers)
+    console.log('AnswerPhase: Total players:', players.length)
+    
+    // Additional debug logging for when all players have submitted
+    if (submittedPlayers.length === players.length) {
+      console.log('AnswerPhase: All players have submitted their answers')
+    }
+  }, [submittedPlayers, players])
 
   return (
-    <div className="container">
-      {/* Temporary debug section */}
-      {prompts.length === 0 && (
-        <div className="debug-info">
-          <div className="room-code">Room: {roomCode}</div>
-          {isHost && (
-            <button 
-              className="button secondary small"
-              onClick={() => socket.emit('start_answer_phase', { roomCode })}
-            >
-              Reload
-            </button>
-          )}
+    <div className="page-container min-h-screen flex items-center justify-center">
+      <div className="w-[500px] flex flex-col items-center space-y-6">
+        {/* Prompt Section */}
+        <div className="w-full bg-purple-900/30 p-6 rounded-xl border-2 border-purple-500/50 
+                       shadow-[0_0_15px_rgba(147,51,234,0.3)]">
+          <h2 className="game-title text-2xl text-center mb-4">Current Question</h2>
+          <p className="text-xl text-center text-white/90">{currentPrompt}</p>
         </div>
-      )}
 
-      <div className="progress-bar">
-        Question {currentPromptIndex + 1} of {prompts.length}
-      </div>
-
-      <div className="prompt-display">
-        <h2>Question:</h2>
-        <p className="prompt-text">{prompts[currentPromptIndex]}</p>
-      </div>
-
-      {!submitted ? (
-        <form onSubmit={handleSubmitAnswer}>
-          <div className="form-group">
-            <label htmlFor="answer">Your Answer:</label>
-            <textarea
-              id="answer"
-              className="answer-input"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Type your answer..."
-              required
-              maxLength={200}
-              rows={3}
-            />
-            <div className="char-count">
-              {answer.length}/200
+        {/* Answer Form */}
+        {!hasSubmitted ? (
+          <form onSubmit={handleSubmitAnswer} className="w-full">
+            <div className="bg-purple-900/30 p-6 rounded-xl border-2 border-purple-500/50 
+                          shadow-[0_0_15px_rgba(147,51,234,0.3)]">
+              <textarea
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="Type your answer here..."
+                className="w-full h-32 p-4 bg-purple-900/30 rounded-lg border-2 border-purple-500/50
+                         text-white placeholder-purple-400 focus:outline-none focus:border-fuchsia-500
+                         transition-all duration-300 resize-none mb-4
+                         shadow-[0_0_10px_rgba(147,51,234,0.2)]"
+                disabled={isLoading}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !answer.trim()}
+                className="button w-full py-3 rounded-lg disabled:opacity-50 
+                         disabled:cursor-not-allowed transition-all duration-300
+                         shadow-[0_0_15px_rgba(219,39,119,0.3)]"
+              >
+                {isLoading ? <LoadingSpinner /> : 'SUBMIT ANSWER'}
+              </button>
             </div>
+          </form>
+        ) : (
+          <div className="w-full bg-purple-900/30 p-6 rounded-xl border-2 
+                         border-purple-500/50 shadow-[0_0_15px_rgba(147,51,234,0.3)]">
+            <h3 className="gradient-text text-xl mb-2 text-center">Answer Submitted!</h3>
+            <p className="text-purple-300 text-center">Waiting for other players...</p>
           </div>
-          <button type="submit" className="button">
-            Submit Answer
-          </button>
-        </form>
-      ) : (
-        <div className="waiting-message">
-          Waiting for other players to answer...
+        )}
+
+        {/* Players Status */}
+        <div className="w-full bg-purple-900/30 p-6 rounded-xl border-2 border-purple-500/50 
+                       shadow-[0_0_15px_rgba(147,51,234,0.3)]">
+          <h3 className="game-title text-xl text-center mb-4">Players Status</h3>
+          <div className="grid grid-cols-1 gap-2">
+            {players.map(player => (
+              <div 
+                key={player.id}
+                className={`flex items-center justify-between px-4 py-2 rounded-lg
+                          transition-all duration-300 ${
+                  submittedPlayers.includes(player.id)
+                    ? 'bg-green-900/20 border-green-500/50 shadow-[0_0_10px_rgba(34,197,94,0.2)]'
+                    : 'bg-purple-900/20 border-purple-500/50 shadow-[0_0_10px_rgba(147,51,234,0.2)]'
+                } border-2`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{player.emoji}</span>
+                  <span className="gradient-text">{player.name}</span>
+                </div>
+                <span>
+                  {submittedPlayers.includes(player.id) 
+                    ? <span className="text-green-400 text-xl">✓</span>
+                    : <span className="text-purple-400">...</span>
+                  }
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      )}
-
-      <div className="submission-status">
-        <h3>Players Answered</h3>
-        {players.map(player => (
-          <div 
-            key={player.id} 
-            className={`player-item ${answeredPlayers.includes(player.id) ? 'submitted' : ''}`}
-          >
-            <span className="player-emoji">{player.emoji}</span>
-            <span className="player-name">{player.name}</span>
-            {answeredPlayers.includes(player.id) && (
-              <span className="status-icon">✓</span>
-            )}
-          </div>
-        ))}
       </div>
-
-      {isHost && allAnswersSubmitted && (
-        <button onClick={handleNextQuestion}>
-          EVERYONE'S DONE - NEXT QUESTION
-        </button>
-      )}
     </div>
   )
 }

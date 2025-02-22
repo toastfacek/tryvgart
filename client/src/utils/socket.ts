@@ -1,6 +1,5 @@
 import { io, Socket } from 'socket.io-client'
 import { DefaultEventsMap } from '@socket.io/component-emitter'
-import { SERVER_URL } from '../config'
 import { Room } from '../types/game'
 
 // Define extended Socket type that includes onAny and offAny
@@ -10,9 +9,14 @@ export interface ExtendedSocket extends Socket<DefaultEventsMap, DefaultEventsMa
 }
 
 // Connect to the server's WebSocket endpoint
-export const socket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:3001', {
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001'
+console.log('Connecting to server:', SERVER_URL)
+
+export const socket = io(SERVER_URL, {
   autoConnect: true,
   reconnection: true,
+  transports: ['websocket', 'polling'],
+  withCredentials: true
 }) as ExtendedSocket
 
 interface RoomCreatedResponse {

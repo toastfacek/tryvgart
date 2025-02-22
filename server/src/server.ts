@@ -22,8 +22,11 @@ const io = new Server(httpServer, {
       'https://tryvgart-server.onrender.com'
     ],
     methods: ['GET', 'POST'],
-    credentials: true
-  } as CorsOptions
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
+  },
+  allowEIO3: true,
+  transports: ['websocket', 'polling']
 })
 
 // Middleware
@@ -33,7 +36,9 @@ app.use(cors({
     'https://tryvgart.vercel.app',
     'https://tryvgart-server.onrender.com'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }))
 app.use(express.json())
 

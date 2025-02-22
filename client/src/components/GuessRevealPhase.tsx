@@ -29,7 +29,7 @@ const GuessRevealPhase: React.FC<Props> = ({
   players,
 }) => {
   const navigate = useNavigate();
-  const [myGuesses, setLocalGuesses] = useState<Record<string, string>>({});
+  const [localGuesses, setLocalGuesses] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const events = [
@@ -64,6 +64,7 @@ const GuessRevealPhase: React.FC<Props> = ({
       
       // Reset states
       setMyGuesses({});
+      setLocalGuesses({});
       setSubmittedPlayers([]);
     });
 
@@ -102,6 +103,7 @@ const GuessRevealPhase: React.FC<Props> = ({
       setCurrentPromptIndex(data.promptIndex);
       setIsGuessing(true);
       setMyGuesses({});
+      setLocalGuesses({});
     });
 
     socket.on('guess_submitted', ({ playerId }: { playerId: string }) => {
@@ -135,11 +137,11 @@ const GuessRevealPhase: React.FC<Props> = ({
         <div key={answer.playerId || index} className="rounded-lg bg-purple-900/50 p-4 border border-purple-700/50">
           <p className="text-lg mb-4">{answer.text}</p>
           <select
-            value={myGuesses[answer.playerId] || ''}
+            value={localGuesses[answer.playerId] || ''}
             onChange={(e) => {
               console.log('Selected player:', e.target.value, 'for answer:', answer);
               const newGuesses = {
-                ...myGuesses,
+                ...localGuesses,
                 [answer.playerId]: e.target.value
               };
               setLocalGuesses(newGuesses);

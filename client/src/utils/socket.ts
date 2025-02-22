@@ -1,12 +1,19 @@
-import { io, Socket as ClientSocket } from 'socket.io-client'
+import { io, Socket } from 'socket.io-client'
+import { DefaultEventsMap } from '@socket.io/component-emitter'
 import { SERVER_URL } from '../config'
 import { Room } from '../types/game'
 
+// Define extended Socket type that includes onAny and offAny
+interface ExtendedSocket extends Socket<DefaultEventsMap, DefaultEventsMap> {
+  onAny: (listener: (eventName: string, ...args: any[]) => void) => this;
+  offAny: (listener: (eventName: string, ...args: any[]) => void) => this;
+}
+
 // Connect to the server's WebSocket endpoint
-export const socket: ClientSocket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:3001', {
+export const socket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:3001', {
   autoConnect: true,
   reconnection: true,
-})
+}) as ExtendedSocket
 
 interface RoomCreatedResponse {
   roomCode: string

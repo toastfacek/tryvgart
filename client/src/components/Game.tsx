@@ -145,14 +145,15 @@ const Game = () => {
     })
 
     // Debug events
-    socket.onAny((eventName: string, ...args: unknown[]) => {
+    const debugListener = (eventName: string, ...args: any[]) => {
       console.log('Game: Socket event:', eventName, args)
-    })
+    }
+    socket.onAny(debugListener)
 
     return () => {
       console.log('Game: Cleaning up socket event listeners')
       events.forEach(event => socket.off(event))
-      socket.offAny()
+      socket.offAny(debugListener)
     }
   }, [roomCode, navigate])
 

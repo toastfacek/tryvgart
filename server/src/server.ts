@@ -341,14 +341,18 @@ io.on('connection', (socket: Socket) => {
     }
 
     const room = roomManager.getRoom(data.roomCode)
-    if (!room) return
+    if (!room) {
+      emitError(socket, 'Room not found')
+      return
+    }
 
     room.currentPromptIndex++
 
     if (room.currentPromptIndex < room.prompts.length) {
       roomManager.updateGameState(data.roomCode, 'answer')
       io.to(data.roomCode).emit('answer_phase_started', {
-        prompt: room.prompts[room.currentPromptIndex]
+        prompt: room.prompts[room.currentPromptIndex],
+        promptIndex: room.currentPromptIndex
       })
     } else {
       roomManager.updateGameState(data.roomCode, 'end')

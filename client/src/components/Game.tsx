@@ -147,10 +147,7 @@ const Game = () => {
 
   const handleNextPrompt = () => {
     if (revealData) {
-      socket.emit('next_prompt', { 
-        roomCode,
-        promptIndex: revealData.promptIndex + 1 
-      })
+      socket.emit('next_prompt', { roomCode })
     }
   }
 

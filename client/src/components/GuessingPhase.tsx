@@ -98,7 +98,24 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
   }, [initialAnswers])
 
   const handleGuessSubmit = () => {
-    if (Object.keys(myGuesses).length !== answers.length || !socket.id) return
+    // A player should guess for all answers except their own
+    const expectedGuessCount = players.length - 1;
+    const actualGuessCount = Object.keys(myGuesses).length;
+
+    console.log('[GuessingPhase] Validating guesses:', {
+      expectedGuessCount,
+      actualGuessCount,
+      myGuesses,
+      socketId: socket.id
+    });
+
+    if (actualGuessCount !== expectedGuessCount || !socket.id) {
+      console.error('[GuessingPhase] Invalid guess count:', {
+        expected: expectedGuessCount,
+        actual: actualGuessCount
+      });
+      return;
+    }
     
     socket.emit('submit_guesses', {
       roomCode,
@@ -142,32 +159,46 @@ const GuessingPhase: React.FC<GuessingPhaseProps> = ({
         {/* Answer Selection */}
         {socket.id && !submittedPlayers.includes(socket.id) && (
           <div className="space-y-4">
-            {answers.map((answer) => (
-              <div key={answer.playerId} className="translucent-container">
-                <p className="text-lg mb-4">{answer.text}</p>
-                <select
-                  value={myGuesses[answer.playerId] || ''}
-                  onChange={(e) => {
-                    setMyGuesses(prev => ({
-                      ...prev,
-                      [answer.playerId]: e.target.value
-                    }))
-                  }}
-                  className="w-full p-2 rounded bg-darker text-white border border-purple-500"
-                >
-                  <option value="">Who wrote this?</option>
-                  {players.map(player => (
-                    <option key={player.id} value={player.id}>
-                      {player.emoji} {player.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+            {answers.map((answer) => {
+              // Don't show guessing UI for player's own answer
+              if (answer.playerId === socket.id) {
+                return (
+                  <div key={answer.playerId} className="translucent-container bg-purple-900/20">
+                    <p className="text-lg mb-4">{answer.text}</p>
+                    <p className="text-cyan-300 italic">This is your answer</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={answer.playerId} className="translucent-container">
+                  <p className="text-lg mb-4">{answer.text}</p>
+                  <select
+                    value={myGuesses[answer.playerId] || ''}
+                    onChange={(e) => {
+                      setMyGuesses(prev => ({
+                        ...prev,
+                        [answer.playerId]: e.target.value
+                      }))
+                    }}
+                    className="w-full p-2 rounded bg-darker text-white border border-purple-500"
+                  >
+                    <option value="">Who wrote this?</option>
+                    {players
+                      .filter(player => player.id !== socket.id) // Don't allow guessing yourself
+                      .map(player => (
+                        <option key={player.id} value={player.id}>
+                          {player.emoji} {player.name}
+                        </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
 
             <button
               onClick={handleGuessSubmit}
-              disabled={Object.keys(myGuesses).length !== answers.length}
+              disabled={Object.keys(myGuesses).length !== (players.length - 1)}
               className="button w-full py-3 bg-fuchsia-600 hover:bg-fuchsia-500 
                        disabled:bg-gray-600 disabled:cursor-not-allowed
                        text-white font-bold transition-colors"

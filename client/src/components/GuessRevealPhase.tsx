@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '../utils/socket';
-import { GuessPhaseData, RevealData, Answer } from '../types/gameTypes';
+import { GuessPhaseData, RevealData, Answer, Player, Score } from '../types/game';
 
 interface Props {
   setPrompts: (prompts: string[]) => void;
@@ -10,10 +10,10 @@ interface Props {
   setAnswers: (answers: Answer[]) => void;
   setMyGuesses: (guesses: Record<string, string>) => void;
   setSubmittedPlayers: React.Dispatch<React.SetStateAction<string[]>>;
-  setScores: (scores: [string, number][]) => void;
+  setScores: (scores: Array<[string, number]>) => void;
   setGuesses: (guesses: Record<string, string>) => void;
   answers: Answer[];
-  players: Array<{ id: string; name: string; emoji: string }>;
+  players: Player[];
 }
 
 const GuessRevealPhase: React.FC<Props> = ({
@@ -73,24 +73,22 @@ const GuessRevealPhase: React.FC<Props> = ({
     socket.on('reveal_answers', (revealData: RevealData) => {
       console.log('Reveal answers data:', revealData);
       
-      // Handle both possible data structures
-      const data = revealData.data || revealData;
-      if (!data || !data.answers) {
+      if (!revealData.answers || !revealData.scores || !revealData.guesses) {
         console.error('Invalid reveal data structure:', revealData);
         return;
       }
 
       try {
-        setAnswers(data.answers);
+        setAnswers(revealData.answers);
         setIsGuessing(false);
+        setScores(revealData.scores.map(score => [score.playerId, score.score]));
         
-        if (data.scores) {
-          setScores(data.scores.map(score => [score.player, score.score]));
-        }
-        
-        if (data.guesses) {
-          setGuesses(data.guesses);
-        }
+        // Convert guesses array to the expected format
+        const guessesMap: Record<string, string> = {};
+        revealData.guesses.forEach(([playerId, playerGuesses]) => {
+          Object.assign(guessesMap, playerGuesses);
+        });
+        setGuesses(guessesMap);
       } catch (err) {
         console.error('Error processing reveal data:', err);
       }
@@ -113,12 +111,12 @@ const GuessRevealPhase: React.FC<Props> = ({
       setSubmittedPlayers(prev => [...prev, playerId]);
     });
 
-    socket.on('score_update', (data: { verified: boolean; scores: Array<{ player: string; score: number }> }) => {
+    socket.on('score_update', (data: { verified: boolean; scores: Score[] }) => {
       if (!data.verified) {
         console.error('Received unverified score data');
         return;
       }
-      setScores(data.scores.map(score => [score.player, score.score]));
+      setScores(data.scores.map(score => [score.playerId, score.score]));
     });
 
     // Cleanup

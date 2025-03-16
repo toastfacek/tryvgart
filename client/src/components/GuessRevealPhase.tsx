@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { socket } from '../socket';
+import { socket } from '../utils/socket';
 import { GuessPhaseData, RevealData, Answer } from '../types/gameTypes';
 
 interface Props {

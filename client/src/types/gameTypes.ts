@@ -13,6 +13,7 @@ export interface PromptAnswers {
 export interface GuessPhaseData {
   prompts: string[];
   answers: PromptAnswers[];
+  currentPromptIndex: number;
 }
 
 export interface Score {

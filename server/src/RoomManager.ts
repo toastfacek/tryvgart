@@ -99,11 +99,27 @@ export class RoomManager {
       room.answers.set(room.currentPromptIndex, new Map())
     }
     const promptAnswers = room.answers.get(room.currentPromptIndex)!
+    
+    // Don't allow duplicate answers from the same player
+    if (promptAnswers.has(playerId)) {
+      return false
+    }
+    
     promptAnswers.set(playerId, answer)
-
     this.io.to(roomCode).emit('player_submitted_answer', { playerId })
 
-    return promptAnswers.size === room.players.length
+    // Ensure we have exactly one answer from each player
+    const allPlayersAnswered = room.players.every(player => 
+      promptAnswers.has(player.id)
+    )
+    
+    console.log(`[ROOM_MANAGER] Answer submitted for room ${roomCode}:`, {
+      totalPlayers: room.players.length,
+      answersReceived: promptAnswers.size,
+      allPlayersAnswered
+    })
+
+    return allPlayersAnswered
   }
 
   updateGameState(roomCode: string, newState: GamePhase): boolean {

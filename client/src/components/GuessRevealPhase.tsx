@@ -51,15 +51,17 @@ const GuessRevealPhase: React.FC<Props> = ({
       setPrompts(phaseData.prompts);
       setIsGuessing(true);
       
-      // Start with first prompt
-      const promptIndex = 0;
+      // Use the currentPromptIndex from server
+      const promptIndex = phaseData.currentPromptIndex || 0;
       setCurrentPromptIndex(promptIndex);
       
-      // Get all answers for current prompt and ensure they're properly formatted
+      // Get answers for current prompt
       const currentAnswers = phaseData.answers.find(a => a.promptIndex === promptIndex);
       if (currentAnswers?.answers) {
-        console.log('Setting answers:', currentAnswers.answers);
+        console.log('Setting answers for prompt', promptIndex, ':', currentAnswers.answers);
         setAnswers(currentAnswers.answers);
+      } else {
+        console.error('No answers found for prompt index:', promptIndex);
       }
       
       // Reset states

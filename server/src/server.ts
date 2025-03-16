@@ -251,22 +251,35 @@ io.on('connection', (socket: Socket) => {
       const room = roomManager.getRoom(data.roomCode)
       if (room) {
         roomManager.updateGameState(data.roomCode, 'guess')
-        // Format and send guess phase data
-        const guessPhaseData = {
-          prompts: room.prompts,  // Send all prompts
-          answers: [{
-            promptIndex: room.currentPromptIndex,
-            answers: Array.from(room.answers.get(room.currentPromptIndex)!.entries()).map(([playerId, text]) => {
-              const player = room.players.find(p => p.id === playerId)
-              return {
-                playerId,
-                text,
-                authorName: player?.name,
-                authorEmoji: player?.emoji
-              }
+        
+        // Format all answers for all prompts up to current
+        const answersData = []
+        for (let i = 0; i <= room.currentPromptIndex; i++) {
+          const promptAnswers = room.answers.get(i)
+          if (promptAnswers) {
+            answersData.push({
+              promptIndex: i,
+              answers: Array.from(promptAnswers.entries()).map(([playerId, text]) => {
+                const player = room.players.find(p => p.id === playerId)
+                return {
+                  playerId,
+                  text,
+                  authorName: player?.name,
+                  authorEmoji: player?.emoji
+                }
+              })
             })
-          }]
+          }
         }
+
+        // Send complete game state
+        const guessPhaseData = {
+          prompts: room.prompts,
+          answers: answersData,
+          currentPromptIndex: room.currentPromptIndex
+        }
+        
+        console.log('Sending guess phase data:', guessPhaseData)
         io.to(data.roomCode).emit('guess_phase_started', guessPhaseData)
       }
     }
@@ -285,17 +298,47 @@ io.on('connection', (socket: Socket) => {
       return
     }
 
+    // Validate that the player has made a guess for each answer except their own
+    const promptAnswers = room.answers.get(data.promptIndex)
+    if (!promptAnswers) {
+      emitError(socket, 'No answers found for this prompt')
+      return
+    }
+
+    const expectedGuessCount = room.players.length - 1 // Exclude player's own answer
+    const actualGuessCount = Object.keys(data.guesses).length
+    
+    if (actualGuessCount !== expectedGuessCount) {
+      console.error(`Invalid guess count for player ${socket.id}:`, {
+        expected: expectedGuessCount,
+        received: actualGuessCount
+      })
+      emitError(socket, `You must make exactly ${expectedGuessCount} guesses`)
+      return
+    }
+
     // Store guesses
     if (!room.guesses.has(data.promptIndex)) {
       room.guesses.set(data.promptIndex, new Map())
     }
     room.guesses.get(data.promptIndex)!.set(socket.id, data.guesses)
 
+    console.log(`[GUESS] Player ${socket.id} submitted guesses for room ${data.roomCode}:`, {
+      promptIndex: data.promptIndex,
+      totalPlayers: room.players.length,
+      guessesReceived: room.guesses.get(data.promptIndex)!.size
+    })
+
     io.to(data.roomCode).emit('guess_submitted', { playerId: socket.id })
 
-    // Check if all players have submitted guesses
+    // Check if all players have submitted valid guesses
     const promptGuesses = room.guesses.get(data.promptIndex)!
-    if (promptGuesses.size === room.players.length) {
+    const allPlayersGuessed = room.players.every(player => 
+      promptGuesses.has(player.id) && 
+      Object.keys(promptGuesses.get(player.id) || {}).length === expectedGuessCount
+    )
+
+    if (allPlayersGuessed) {
       // Calculate scores and send reveal data
       const promptAnswers = room.answers.get(data.promptIndex)!
       promptGuesses.forEach((playerGuesses: Record<string, string>, guessingPlayerId: string) => {

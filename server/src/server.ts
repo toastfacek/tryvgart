@@ -240,16 +240,37 @@ io.on('connection', (socket: Socket) => {
   })
 
   socket.on('submit_answer', (data: SubmitAnswerData) => {
+    console.log('[SERVER] Received answer submission:', {
+      roomCode: data.roomCode,
+      playerId: socket.id,
+      answerLength: data.answer?.length
+    });
+
     const validation = eventValidator.validateSubmitAnswer(data)
     if (!validation.isValid) {
+      console.error('[SERVER] Answer validation failed:', validation.error);
       emitError(socket, validation.error!)
       return
     }
 
     const allAnswersSubmitted = roomManager.submitAnswer(data.roomCode, socket.id, data.answer)
+    console.log('[SERVER] Answer submission status:', {
+      roomCode: data.roomCode,
+      allAnswersSubmitted,
+      socketId: socket.id
+    });
+
     if (allAnswersSubmitted) {
       const room = roomManager.getRoom(data.roomCode)
       if (room) {
+        console.log('[SERVER] All answers submitted, room state:', {
+          roomCode: data.roomCode,
+          currentPromptIndex: room.currentPromptIndex,
+          playerCount: room.players.length,
+          answersCount: room.answers.get(room.currentPromptIndex)?.size,
+          gameState: room.gameState
+        });
+
         roomManager.updateGameState(data.roomCode, 'guess')
         
         // Format all answers for all prompts up to current
@@ -257,18 +278,24 @@ io.on('connection', (socket: Socket) => {
         for (let i = 0; i <= room.currentPromptIndex; i++) {
           const promptAnswers = room.answers.get(i)
           if (promptAnswers) {
+            const formattedAnswers = Array.from(promptAnswers.entries()).map(([playerId, text]) => {
+              const player = room.players.find(p => p.id === playerId)
+              return {
+                playerId,
+                text,
+                authorName: player?.name || '',
+                authorEmoji: player?.emoji || ''
+              }
+            });
             answersData.push({
               promptIndex: i,
-              answers: Array.from(promptAnswers.entries()).map(([playerId, text]) => {
-                const player = room.players.find(p => p.id === playerId)
-                return {
-                  playerId,
-                  text,
-                  authorName: player?.name || '',
-                  authorEmoji: player?.emoji || ''
-                }
-              })
+              answers: formattedAnswers
             })
+            console.log(`[SERVER] Formatted answers for prompt ${i}:`, {
+              promptIndex: i,
+              answerCount: formattedAnswers.length,
+              answers: formattedAnswers
+            });
           }
         }
 
@@ -279,8 +306,10 @@ io.on('connection', (socket: Socket) => {
           currentPromptIndex: room.currentPromptIndex
         }
         
-        console.log('Sending guess phase data:', JSON.stringify(guessPhaseData, null, 2))
+        console.log('[SERVER] Sending guess phase data:', JSON.stringify(guessPhaseData, null, 2))
         io.to(data.roomCode).emit('guess_phase_started', guessPhaseData)
+      } else {
+        console.error('[SERVER] Room not found after all answers submitted:', data.roomCode);
       }
     }
   })

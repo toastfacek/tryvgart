@@ -32,6 +32,12 @@ const GuessRevealPhase: React.FC<Props> = ({
   const [localGuesses, setLocalGuesses] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    console.log('[GuessRevealPhase] Component mounted with initial state:', {
+      answersCount: answers.length,
+      playersCount: players.length,
+      hasLocalGuesses: Object.keys(localGuesses).length > 0
+    });
+
     const events = [
       'guess_phase_started',
       'reveal_answers',
@@ -42,32 +48,48 @@ const GuessRevealPhase: React.FC<Props> = ({
     ];
 
     socket.on('guess_phase_started', (phaseData: GuessPhaseData) => {
-      console.log('Guess phase started with data:', phaseData);
+      console.log('[GuessRevealPhase] Received guess_phase_started:', {
+        hasPrompts: Boolean(phaseData?.prompts),
+        promptsLength: phaseData?.prompts?.length,
+        hasAnswers: Boolean(phaseData?.answers),
+        answersLength: phaseData?.answers?.length,
+        currentPromptIndex: phaseData?.currentPromptIndex
+      });
+
       if (!phaseData?.prompts || !phaseData?.answers) {
-        console.error('Invalid guess phase data:', phaseData);
+        console.error('[GuessRevealPhase] Invalid guess phase data:', phaseData);
         return;
       }
 
-      setPrompts(phaseData.prompts);
-      setIsGuessing(true);
-      
-      // Use the currentPromptIndex from server
-      const promptIndex = phaseData.currentPromptIndex || 0;
-      setCurrentPromptIndex(promptIndex);
-      
-      // Get answers for current prompt
-      const currentAnswers = phaseData.answers.find(a => a.promptIndex === promptIndex);
-      if (currentAnswers?.answers) {
-        console.log('Setting answers for prompt', promptIndex, ':', currentAnswers.answers);
-        setAnswers(currentAnswers.answers);
-      } else {
-        console.error('No answers found for prompt index:', promptIndex);
+      try {
+        setPrompts(phaseData.prompts);
+        setIsGuessing(true);
+        
+        const promptIndex = phaseData.currentPromptIndex || 0;
+        setCurrentPromptIndex(promptIndex);
+        
+        const currentAnswers = phaseData.answers.find(a => a.promptIndex === promptIndex);
+        console.log('[GuessRevealPhase] Current answers data:', {
+          promptIndex,
+          hasCurrentAnswers: Boolean(currentAnswers),
+          answersCount: currentAnswers?.answers?.length
+        });
+
+        if (currentAnswers?.answers) {
+          console.log('[GuessRevealPhase] Setting answers:', currentAnswers.answers);
+          setAnswers(currentAnswers.answers);
+        } else {
+          console.error('[GuessRevealPhase] No answers found for prompt index:', promptIndex);
+        }
+        
+        setMyGuesses({});
+        setLocalGuesses({});
+        setSubmittedPlayers([]);
+
+        console.log('[GuessRevealPhase] State updates completed for guess phase');
+      } catch (error) {
+        console.error('[GuessRevealPhase] Error processing guess phase data:', error);
       }
-      
-      // Reset states
-      setMyGuesses({});
-      setLocalGuesses({});
-      setSubmittedPlayers([]);
     });
 
     socket.on('reveal_answers', (revealData: RevealData) => {
@@ -121,9 +143,19 @@ const GuessRevealPhase: React.FC<Props> = ({
 
     // Cleanup
     return () => {
+      console.log('[GuessRevealPhase] Component unmounting, cleaning up socket listeners');
       events.forEach(event => socket.off(event));
     };
   }, [navigate, setPrompts, setIsGuessing, setCurrentPromptIndex, setAnswers, setMyGuesses, setSubmittedPlayers, setScores, setGuesses]);
+
+  // Monitor state changes
+  useEffect(() => {
+    console.log('[GuessRevealPhase] State updated:', {
+      answersCount: answers.length,
+      playersCount: players.length,
+      localGuessesCount: Object.keys(localGuesses).length
+    });
+  }, [answers, players, localGuesses]);
 
   // Add debug logging for answers and players
   useEffect(() => {

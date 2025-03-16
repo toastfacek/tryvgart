@@ -94,19 +94,29 @@ const Game = () => {
     })
 
     socket.on('guess_phase_started', (data: GuessPhaseData) => {
-      console.log('Game: Guess phase started with data:', JSON.stringify(data, null, 2))
+      console.log('[Game] Received guess_phase_started:', {
+        hasData: Boolean(data),
+        gamePhase,
+        currentPromptIndex: data?.currentPromptIndex,
+        hasGuessPhaseData: Boolean(guessPhaseData)
+      });
       
       if (!data || !Array.isArray(data.prompts) || !Array.isArray(data.answers)) {
-        console.error('Game: Invalid guess phase data structure:', data)
-        return
+        console.error('[Game] Invalid guess phase data structure:', data);
+        return;
       }
 
       try {
-        setGuessPhaseData(data)
-        setGamePhase('guess')
-        console.log('Game: Successfully transitioned to guess phase')
+        setGuessPhaseData(data);
+        const prevPhase = gamePhase;
+        setGamePhase('guess');
+        console.log('[Game] Updated game state:', {
+          prevPhase,
+          newPhase: 'guess',
+          hasGuessData: Boolean(data)
+        });
       } catch (error) {
-        console.error('Game: Error transitioning to guess phase:', error)
+        console.error('[Game] Error transitioning to guess phase:', error);
       }
     })
 
@@ -121,6 +131,14 @@ const Game = () => {
       setFinalScores(scores)
       setGamePhase('end')
     })
+
+    socket.on('game_phase_changed', ({ phase }: { phase: GamePhase }) => {
+      console.log('[Game] Game phase changed:', {
+        from: gamePhase,
+        to: phase
+      });
+      setGamePhase(phase);
+    });
 
     // Player events
     socket.on('player_joined', ({ player }: { player: Player }) => {

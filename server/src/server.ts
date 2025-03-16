@@ -264,8 +264,8 @@ io.on('connection', (socket: Socket) => {
                 return {
                   playerId,
                   text,
-                  authorName: player?.name,
-                  authorEmoji: player?.emoji
+                  authorName: player?.name || '',
+                  authorEmoji: player?.emoji || ''
                 }
               })
             })
@@ -279,7 +279,7 @@ io.on('connection', (socket: Socket) => {
           currentPromptIndex: room.currentPromptIndex
         }
         
-        console.log('Sending guess phase data:', guessPhaseData)
+        console.log('Sending guess phase data:', JSON.stringify(guessPhaseData, null, 2))
         io.to(data.roomCode).emit('guess_phase_started', guessPhaseData)
       }
     }

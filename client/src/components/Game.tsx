@@ -94,16 +94,20 @@ const Game = () => {
     })
 
     socket.on('guess_phase_started', (data: GuessPhaseData) => {
-      console.log('Game: Guess phase started with data:', data)
-      console.log('Game: Raw guess phase data:', {
-        prompts: data.prompts,
-        answers: data.answers,
-        firstAnswer: data.answers[0]
-      })
-      setGuessPhaseData(data)
-      console.log('Game: Successfully set guess phase data')
-      console.log('Game: Updating phase from answer to guess')
-      setGamePhase('guess')
+      console.log('Game: Guess phase started with data:', JSON.stringify(data, null, 2))
+      
+      if (!data || !Array.isArray(data.prompts) || !Array.isArray(data.answers)) {
+        console.error('Game: Invalid guess phase data structure:', data)
+        return
+      }
+
+      try {
+        setGuessPhaseData(data)
+        setGamePhase('guess')
+        console.log('Game: Successfully transitioned to guess phase')
+      } catch (error) {
+        console.error('Game: Error transitioning to guess phase:', error)
+      }
     })
 
     socket.on('reveal_answers', (data: RevealData) => {

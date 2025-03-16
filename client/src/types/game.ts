@@ -4,30 +4,25 @@ export interface Player {
   emoji: string
 }
 
+export type GamePhase = 'lobby' | 'prompt' | 'answer' | 'guess' | 'reveal' | 'end'
+
 export interface Room {
   code: string
   host: Player
   players: Player[]
   gameState: GamePhase
-  prompts: Map<string, string>  // playerId -> prompt
+  prompts: string[]  // Array of prompts in order
   answers: Map<number, Map<string, string>>  // promptIndex -> (playerId -> answer)
-  guesses: Map<number, Map<string, Record<number, string>>>  // promptIndex -> playerId -> guesses
+  guesses: Map<number, Map<string, Record<string, string>>>  // promptIndex -> playerId -> (answerPlayerId -> guessedPlayerId)
   scores: Map<string, number>  // playerId -> score
-}
-
-export type GamePhase = 'lobby' | 'prompt' | 'answer' | 'guess' | 'reveal' | 'end'
-
-export interface GameState {
-  roomCode: string
-  isHost: boolean
-  room?: Room
+  currentPromptIndex: number
 }
 
 export interface Answer {
   playerId: string
   text: string
-  authorName?: string
-  authorEmoji?: string
+  authorName: string
+  authorEmoji: string
 }
 
 export interface GuessPhaseData {
@@ -36,24 +31,41 @@ export interface GuessPhaseData {
     promptIndex: number
     answers: Answer[]
   }>
+  currentPromptIndex: number
 }
 
 export interface RevealData {
   promptIndex: number
   prompts: string[]
-  answers: Array<{
-    playerId: string
-    text: string
-    authorName?: string
-    authorEmoji?: string
-  }>
+  answers: Answer[]
   guesses: Array<[string, Record<string, string>]>  // [playerId, guesses]
   scores: Array<{
     playerId: string
-    playerName?: string
-    playerEmoji?: string
+    playerName: string
+    playerEmoji: string
     score: number
   }>
+}
+
+export interface GameState {
+  roomCode: string
+  isHost: boolean
+  room?: Room
+}
+
+export interface AnswerSubmittedPayload {
+  playerId: string
+}
+
+export interface GuessSubmittedPayload {
+  playerId: string
+}
+
+export interface Score {
+  playerId: string
+  playerName: string
+  playerEmoji: string
+  score: number
 }
 
 // Event payload interfaces
@@ -76,14 +88,6 @@ export interface PromptSubmittedPayload {
 
 export interface AnswerPhaseStartedPayload {
   prompts: string[]
-}
-
-export interface AnswerSubmittedPayload {
-  playerId: string
-}
-
-export interface GuessSubmittedPayload {
-  playerId: string
 }
 
 export interface NextPromptPayload {

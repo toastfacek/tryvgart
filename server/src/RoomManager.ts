@@ -32,25 +32,30 @@ export class RoomManager {
   }
 
   addPlayerToRoom(socket: Socket, roomCode: string, playerName: string, playerEmoji: string): { success: boolean; error?: string; room?: Room } {
+    console.log(`[ROOM_MANAGER] Checking room ${roomCode}`)
     const room = this.rooms.get(roomCode)
     if (!room) {
+      console.log(`[ROOM_MANAGER] Room ${roomCode} not found`)
       return { success: false, error: 'Room not found' }
     }
 
+    console.log(`[ROOM_MANAGER] Current players in room:`, room.players.map(p => p.name))
     const existingPlayer = room.players.find(p => 
       p.id === socket.id || 
       p.name.toLowerCase() === playerName.toLowerCase()
     )
 
     if (existingPlayer) {
+      console.log(`[ROOM_MANAGER] Player already exists: ${existingPlayer.name} (${existingPlayer.id})`)
       return { success: false, error: 'You are already in this room or name is taken' }
     }
 
     const player: Player = { id: socket.id, name: playerName, emoji: playerEmoji }
     room.players.push(player)
     room.scores.set(player.id, 0)
-    socket.join(roomCode)
+    console.log(`[ROOM_MANAGER] Added player ${playerName} to room ${roomCode}`)
     
+    socket.join(roomCode)
     return { success: true, room }
   }
 

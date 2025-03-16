@@ -15,9 +15,39 @@ console.log('Connecting to server:', SERVER_URL)
 export const socket = io(SERVER_URL, {
   autoConnect: true,
   reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
   transports: ['websocket', 'polling'],
   withCredentials: true
 }) as ExtendedSocket
+
+// Add connection event listeners
+socket.on('connect', () => {
+  console.log('Socket connected:', socket.id)
+})
+
+socket.on('disconnect', () => {
+  console.log('Socket disconnected')
+})
+
+socket.on('connect_error', (error) => {
+  console.error('Socket connection error:', error)
+})
+
+socket.on('connect_timeout', () => {
+  console.error('Socket connection timeout')
+})
+
+socket.on('error', (error) => {
+  console.error('Socket error:', error)
+})
+
+// Debug all events
+socket.onAny((event, ...args) => {
+  console.log('Socket event:', event, args)
+})
 
 interface RoomCreatedResponse {
   roomCode: string
@@ -33,14 +63,17 @@ interface SocketError {
 }
 
 export const createRoom = (playerName: string, emoji: string): Promise<RoomCreatedResponse> => {
+  console.log('Creating room with:', { playerName, emoji })
   return new Promise((resolve, reject) => {
     const handleRoomCreated = (data: RoomCreatedResponse) => {
+      console.log('Room created:', data)
       socket.off('room_created', handleRoomCreated)
       socket.off('error', handleError)
       resolve(data)
     }
 
     const handleError = (error: SocketError) => {
+      console.error('Error creating room:', error)
       socket.off('room_created', handleRoomCreated)
       socket.off('error', handleError)
       reject(error)
@@ -71,14 +104,16 @@ export const joinRoom = (roomCode: string, playerName: string, emoji: string): P
 
     socket.on('room_joined', handleRoomJoined)
     socket.on('error', handleError)
-    socket.emit('join_room', { roomCode, playerName, emoji })
+    socket.emit('join_room', { roomCode, playerName, playerEmoji: emoji })
   })
 }
 
 // Should handle reconnection and rejoin room
 socket.on('reconnect', () => {
+  console.log('Socket reconnected')
   const currentRoom = localStorage.getItem('currentRoom')
   if (currentRoom) {
+    console.log('Rejoining room:', currentRoom)
     socket.emit('rejoin_room', { roomCode: currentRoom })
   }
 }) 

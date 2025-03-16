@@ -173,18 +173,23 @@ io.on('connection', (socket: Socket) => {
 
   // Handle room joining
   socket.on('join_room', (data: JoinRoomData) => {
+    console.log(`[JOIN_ROOM] Attempt to join room ${data.roomCode} by ${data.playerName}`)
+    
     const validation = eventValidator.validateJoinRoom(data)
     if (!validation.isValid) {
+      console.log(`[JOIN_ROOM] Validation failed: ${validation.error}`)
       emitError(socket, validation.error!)
       return
     }
 
     const result = roomManager.addPlayerToRoom(socket, data.roomCode, data.playerName, data.playerEmoji)
     if (!result.success) {
+      console.log(`[JOIN_ROOM] Failed to add player: ${result.error}`)
       emitError(socket, result.error!)
       return
     }
 
+    console.log(`[JOIN_ROOM] Successfully added ${data.playerName} to room ${data.roomCode}`)
     io.to(data.roomCode).emit('player_joined', { 
       player: { id: socket.id, name: data.playerName, emoji: data.playerEmoji }
     })
